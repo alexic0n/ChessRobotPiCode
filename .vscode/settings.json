@@ -5,7 +5,7 @@
         "-s",
         ".",
         "-p",
-        "*test*.py"
+        "allUnitTests.py"
     ],
     "python.unitTest.pyTestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,

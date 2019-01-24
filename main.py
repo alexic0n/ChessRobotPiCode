@@ -1,11 +1,13 @@
 # import files like this
 from classes.boardState import *
+from classes.move import *
 from util.util import *
 
-board = BoardState()
-board.printState()
+b = BoardState()
+b.printState()
 
-print(squareToCoordinates("a1"))
-print(squareToCoordinates("H8"))
+m = Move("r", {"x": 0, "y": 0}, {"x": 0, "y": 1})
 
-print(board.getPieceAt({"x": 0, "y": 0}))
+b.applyMove(m)
+
+b.printState()
