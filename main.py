@@ -1,5 +1,8 @@
 # import files like this
-from classes.boardState import BoardState
+from classes.boardState import *
+from util.util import *
 
-board = BoardState("hey")
+board = BoardState()
 board.printState()
+
+print(squareToCoordinates("H%3"))

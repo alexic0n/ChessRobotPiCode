@@ -1,7 +1,17 @@
 class BoardState:
 
-    def __init__(self, state):
-        self.state = state
+    def __init__(self):
+        # initial starting board
+        self.state = [
+            "rnbqkbnr",
+            "pppppppp",
+            "********",
+            "********",
+            "********",
+            "********",
+            "PPPPPPPP",
+            "RNBQKBNR"
+        ]
 
     def applyMove(self, move):
         pass
@@ -11,3 +21,6 @@ class BoardState:
 
     def printState(self):
         print(self.state)
+
+    def getPieceAt(self, square):
+        pass
