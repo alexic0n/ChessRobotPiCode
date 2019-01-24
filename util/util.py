@@ -28,3 +28,4 @@ def squareToCoordinates(square):
         raise ValueError("argument 'square' must end with a number between 1 and 8")
 
     return {"x": x, "y": y}
+    
