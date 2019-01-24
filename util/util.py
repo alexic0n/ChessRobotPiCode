@@ -12,9 +12,10 @@ def squareToCoordinates(square):
     if (not letter.isupper() and not letter.islower()):
         raise ValueError("argument 'square' must start with a letter")
 
-    if (letter.isupper()):
-        letter = chr(ord(letter) + 32)
+    # force lowercase
+    if (letter.isupper()): letter = chr(ord(letter) + 32)
 
+    # convert letter to number
     x = ord(letter) - 97
 
     if (x >= 8 or x < 0):
