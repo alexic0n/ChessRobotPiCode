@@ -17,10 +17,20 @@ class BoardState:
         pass
     
     def verifyState(self, ambiguousBoard):
-        pass
+        for row in range(8):
+            for col in range(8):
+                ambiguous = ambiguousBoard[row][col]
+                state = self.state[row][col]
+                if (ambiguous == "b" and not state.islower()): return False
+                if (ambiguous == "w" and not state.isupper()): return False
+                if (ambiguous == "*" and not state == "*"): return False
+
+        return True
 
     def printState(self):
         print(self.state)
 
-    def getPieceAt(self, square):
-        pass
+    def getPieceAt(self, pos):
+        x = pos["x"]
+        y = pos["y"]
+        return self.state[y][x]

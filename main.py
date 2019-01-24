@@ -7,3 +7,5 @@ board.printState()
 
 print(squareToCoordinates("a1"))
 print(squareToCoordinates("H8"))
+
+print(board.getPieceAt({"x": 0, "y": 0}))

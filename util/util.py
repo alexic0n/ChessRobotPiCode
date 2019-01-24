@@ -7,7 +7,7 @@ def squareToCoordinates(square):
         raise ValueError("argument 'square' must be two characters long")
 
     # extract letter from square
-    letter = square[:1]
+    letter = square[0]
 
     if (not letter.isupper() and not letter.islower()):
         raise ValueError("argument 'square' must start with a letter")
@@ -22,10 +22,10 @@ def squareToCoordinates(square):
         raise ValueError("argument 'square' must start with a letter between 'a' and 'h'")
     
     # extract y from square
-    y = int(square[1:2]) - 1
+    y = int(square[1]) - 1
 
     if (y >= 8 or y < 0):
         raise ValueError("argument 'square' must end with a number between 1 and 8")
 
     return {"x": x, "y": y}
-    
+
