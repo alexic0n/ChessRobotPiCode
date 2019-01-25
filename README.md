@@ -33,6 +33,7 @@ If you are importing files then you need to import them as if you were at the ro
 For example if you are in function1.py and you want to import class1.py:
 
 In function1.py: `from classes.class1 import *`
+
 In main.py: `from functions.function1 import *`
 
 Then run main.py (or any other file at the root level).
