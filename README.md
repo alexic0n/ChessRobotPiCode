@@ -1,5 +1,7 @@
-The structure for the files will be as follows:
+# Notes on project structure
 
+The structure for the files will be as follows:
+```
 root/
 |
 |-- classes/
@@ -23,8 +25,9 @@ root/
 |
 |-- main.py
 |-- runAllTests.py
+```
 
-IMPORTING FILES:
+# Importing files
 
 If you are importing files then you need to import them as if you were at the root level. 
 For example if you are in function1.py and you want to import class1.py:
