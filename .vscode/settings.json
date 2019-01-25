@@ -3,9 +3,9 @@
     "python.unitTest.unittestArgs": [
         "-v",
         "-s",
-        ".",
+        "./unittests",
         "-p",
-        "allUnitTests.py"
+        "test*.py"
     ],
     "python.unitTest.pyTestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,

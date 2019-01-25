@@ -1,36 +1,27 @@
 import unittest
 
-from classes.boardState import *
-from classes.move import *
+import sys
+sys.path.append('C:/Users/felix/Documents/SDP pi/classes')
+
+from boardState import *
+from move import *
 
 class UnitTests(unittest.TestCase):
 
-    def testBoardVerification(self):
-        board = BoardState()
-        ambiguousBoard = [
-            "bbbbbbbb",
-            "bbbbbbbb",
-            "********",
-            "********",
-            "********",
-            "********",
-            "wwwwwwww",
-            "wwwwwwww"
-        ]
-        self.assertTrue(board.verifyState(ambiguousBoard))
-
     def testApplyMove(self):
 
-        def shouldFail(move):
+        # if the applyMove method does not throw an error, the test will fail
+        def expectError(move):
             try:
                 BoardState().applyMove(move)
                 # applyMove will fail so this assertion will not be seen
                 self.assertFalse(f"Apply move succeeded when it should have failed. {move.toString()}")
             except: pass
                 
-        shouldFail(Move("p", {'x': 0, 'y': 2}, {'x': 0, 'y': 3})) # wrong piece
-        shouldFail(Move("p", {'x': 0, 'y': 1}, {'x': 0, 'y': 1})) # start == to
-        shouldFail(Move("p", {'x': 0, 'y': 1}, {'x': 0, 'y': 1})) # start == to
+        expectError(Move("p", {'x': 0, 'y': 2}, {'x': 0, 'y': 3}))  # wrong piece
+        expectError(Move("p", {'x': 0, 'y': 1}, {'x': 0, 'y': 1}))  # start == to
+        expectError(Move("p", {'x': 0, 'y': 1}, {'x': 0, 'y': -1})) # off the board
+        expectError(Move("p", {'x': 0, 'y': 1}, {'x': 1, 'y': 1}))  # move.to not empty
 
         board = BoardState()
         board.applyMove(Move("p", {'x': 0, 'y': 1}, {'x': 0, 'y': 3}))
