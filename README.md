@@ -1,4 +1,3 @@
-
 The structure for the files will be as follows:
 
 root/
