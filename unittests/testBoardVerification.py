@@ -1,11 +1,8 @@
 import unittest
 
-import sys
-sys.path.append('C:/Users/felix/Documents/SDP pi/classes')
+from classes.boardState import *
 
-from boardState import *
-
-class UnitTests(unittest.TestCase):
+class BoardVerification(unittest.TestCase):
 
     def testBoardVerification(self):
         board = BoardState()

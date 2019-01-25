@@ -1,3 +1,5 @@
+from util.util import *
+
 class BoardState:
 
     def __init__(self):

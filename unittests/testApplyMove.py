@@ -1,12 +1,10 @@
 import unittest
 
-import sys
-sys.path.append('C:/Users/felix/Documents/SDP pi/classes')
+# this file will be called from runAllTests.py which will be able to import modules from classes
+from classes.boardState import *
+from classes.move import *
 
-from boardState import *
-from move import *
-
-class UnitTests(unittest.TestCase):
+class TestApplyMove(unittest.TestCase):
 
     def testApplyMove(self):
 

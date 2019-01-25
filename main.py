@@ -6,8 +6,8 @@ from util.util import *
 b = BoardState()
 b.printState()
 
-m = Move("r", {"x": 0, "y": 0}, {"x": 0, "y": 1})
+# m = Move("r", {"x": 0, "y": 0}, {"x": 0, "y": 1})
 
-b.applyMove(m)
+# b.applyMove(m)
 
-b.printState()
+# b.printState()
