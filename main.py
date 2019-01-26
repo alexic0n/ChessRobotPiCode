@@ -29,7 +29,7 @@ def userTurn(board, computerSide):
         return True
     else:
         print("That move is illegal! Try again.")
-        return userTurn(board)
+        return userTurn(board, computerSide)
 
 def gameplayloop(board):
     wOrB = input("White or black (w/b): ")
