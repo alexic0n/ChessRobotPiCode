@@ -1,10 +1,12 @@
 # import files like this
 # from classes.boardState import *
 # from classes.move import *
+import sys
+sys.path.append("util/pythonchess")
+import chess
+import chess.engine
 from classes.aiInterface import *
 from util.util import *
-import sys
-sys.path.append('/home/student/ChessBotTest/util/python-chess-master')
 
 def userTurn(board, computerSide):
     print("The current board state is:\n")

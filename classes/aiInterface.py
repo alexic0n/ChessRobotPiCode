@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/student/ChessBotTest/util/python-chess-master')
+sys.path.append("../util/pythonchess")
 import chess
 import chess.engine
 
@@ -11,7 +11,7 @@ class ChessMatch:
     def __init__(self,thinkTime):
         self.limit = chess.engine.Limit(time = thinkTime)
         self.board = chess.Board()
-        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/ChessBotTest/util/stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/ChessBot/util/stockfish")
 
     def endgame(self):
         self.engine.quit()
