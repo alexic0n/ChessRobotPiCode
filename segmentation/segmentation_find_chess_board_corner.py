@@ -23,9 +23,6 @@ def segmentation_board(image):
     if ret:
         # 4: rise the accuracy
         corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-        point = cv2.drawChessboardCorners(gray, (7, 7), corners2, ret)
-        cv2.imshow('img', point)
-        cv2.waitKey(0)
 
         top_left = corners2[0] - (corners2[42] - corners2[0]) / 6 - (corners2[6] - corners2[0]) / 6
         bottom_right = corners2[48] + (corners2[48] - corners2[6]) / 6 + (corners2[48] - corners2[42]) / 6
