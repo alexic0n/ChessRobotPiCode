@@ -6,8 +6,8 @@ from segmentation_find_chess_board_corner import segmentation_board as findCorne
 from segmentation_template_matching import segmentation_board as templateMatch
 print("importing modules... done.")
 
-img = cv2.imread("segmentation/testImages/felix.jpg")
-template = cv2.imread("segmentation/template.jpg")
+img = cv2.imread("testImages/felix.jpg")
+template = cv2.imread("template.jpg")
 
 print("performing edge detection & analysis...", end="\r")
 output = edgeAnalysis(img)
