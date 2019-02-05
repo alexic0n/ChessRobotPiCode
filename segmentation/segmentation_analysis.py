@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-# help function 1: smooth histogram
+# smooth histogram
 def his_smooth(his, step):
     length = len(his)
     smooth = np.zeros(length)
@@ -12,7 +12,6 @@ def his_smooth(his, step):
     return smooth
 
 
-# help function 2: get boundary of the chessboard with the peaks and bottoms of histogram
 def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom):
     length = len(peaks)
 
@@ -57,7 +56,6 @@ def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom):
     return [b1, b2]
 
 
-# segmentation function
 def segmentation_board(image):
     # 1: convert image to gray and get the size of the image
 
@@ -242,4 +240,4 @@ def segmentation_board(image):
             bottom_horizontal.clear()
             continue
 
-        return [boundary_horizontal[0], boundary_horizontal[1], boundary_vertical[0], boundary_vertical[1]]
+        return [[boundary_horizontal[0], boundary_vertical[0]], [boundary_horizontal[1], boundary_vertical[1]]]
