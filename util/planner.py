@@ -1,6 +1,10 @@
 from util import *
 
-# both arguments are in FEN notation
+# move: a 4 length string move
+# board: the FEN notation with * for the state of the board
+# coordinates: a dictionary of squares and the coordinates of the pieces on them
+# boardDimensions: a dictionary of coordinates for the sides of the board
+# enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
     assert len(move) == 4
     assert len(board) == 64 + 7
