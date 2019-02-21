@@ -26,9 +26,10 @@ class ChessMatch:
         for a in legalMoves:
             self.board.push(a)
             if(updatedBoardFen == self.convertBW(self.board.fen())):
-                return True
+                print("\nMatch found, now my turn to make a move..")
+                return True, a
             self.board.pop()
-        return False
+        return False, False
 
     def convertBW(self, toConv):
         boardState = toConv.split(' ')[0]
@@ -48,5 +49,4 @@ class ChessMatch:
             else:
                 forRet = forRet + boardState[counter]
             counter = counter + 1
-        print(forRet)
         return forRet
