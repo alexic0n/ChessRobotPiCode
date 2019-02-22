@@ -6,6 +6,9 @@ from util import *
 # boardDimensions: a dictionary of coordinates for the sides of the board
 # enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
+    print(f"Move: {move}")
+    print(f"Board: {board}")
+    
     assert len(move) == 4
     assert len(board) == 64 + 7
     assert boardDimensions["left"] != None
@@ -21,6 +24,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
 
     splitBoard = board.split("/")
     assert len(splitBoard) == 8
+    for row in splitBoard: assert len(row) == 8
 
     moveFrom = squareToCoordinates(move[0:2])
     moveTo   = squareToCoordinates(move[2:4])
@@ -37,7 +41,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
     # castling
     rookMove = castlingRookMove(moveFrom, moveTo, splitBoard)
     if (rookMove != None):
-        print("CASTLING!")
+        print("Castling!")
         rookSquare = coordinatesToSquare(rookMove["from"])
         actions += movePiece(moveFromCoor, moveToMiddleCoor)
         actions += movePiece(
@@ -50,7 +54,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
 
     # en passant
     if (move[2:4] == enpassant):
-        print("EN PASSANT!")
+        print("En passant!")
         if (enpassant[1] == "3"):
             pawnToTake = enpassant[0] + "4"
         else:
@@ -65,7 +69,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
 
     # if the move to square is not empty, remove the piece from there first
     if (splitBoard[moveTo["y"]][moveTo["x"]] != "*"):
-        print("TAKING PIECE!")
+        print("Taking piece!")
         actions += movePiece(moveToCoor, "off the board")
 
     # move the piece normally
@@ -119,7 +123,11 @@ def castlingRookMove(moveFrom, moveTo, splitBoard):
 
 # EXAMPLE USES #################################################################
 
-print("\nNORMAL MOVE")
+# in these examples the board is 8x8 units big, with the top left corner being 0,0
+# to represent a piece being off-centre x.51 is used, the planner will then place pieces
+# exactly at x.5
+
+print("\nNORMAL MOVE:")
 actions = plan(
     "a2a4",
     "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
@@ -127,12 +135,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nTAKE PIECE")
+print("\nTAKE PIECE:")
 actions = plan(
     "b3a4",
     "rnbqkbnr/*ppppppp/********/********/p*******/*P******/P*PPPPPP/RNBQKBNR",
@@ -140,12 +147,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nEN PASSANT")
+print("\nEN PASSANT:")
 actions = plan(
     "b4a3",
     "rnbqkbnr/p*pppppp/********/********/Pp******/********/*PPPPPPP/RNBQKBNR",
@@ -153,12 +159,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "a3"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nEN PASSANT THE OTHER WAY")
+print("\nEN PASSANT THE OTHER WAY:")
 actions = plan(
     "a5b6",
     "rnbqkbnr/p*pppppp/********/Pp******/********/********/*PPPPPPP/RNBQKBNR",
@@ -166,12 +171,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "b6"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nCASTLING RIGHT TOP")
+print("\nCASTLING RIGHT TOP:")
 actions = plan(
     "e8g8",
     "rnbqk**r/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
@@ -179,12 +183,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nCASTLING LEFT TOP")
+print("\nCASTLING LEFT TOP:")
 actions = plan(
     "e8c8",
     "r***kbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
@@ -192,12 +195,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nCASTLING RIGHT BOTTOM")
+print("\nCASTLING RIGHT BOTTOM:")
 actions = plan(
     "e1g1",
     "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQK**R",
@@ -205,12 +207,11 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
+print("Actions:")
+for action in actions: print(action)
 
-for action in actions:
-    print(action)
 
-
-print("\nCASTLING LEFT BOTTOM")
+print("\nCASTLING LEFT BOTTOM:")
 actions = plan(
     "e1c1",
     "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/R***KBNR",
@@ -218,6 +219,5 @@ actions = plan(
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
-
-for action in actions:
-    print(action)
+print("Actions:")
+for action in actions: print(action)
