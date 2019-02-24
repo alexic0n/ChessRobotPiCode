@@ -4,6 +4,5 @@ glob3
 opencv-python
 numpy
 pillow
-sys
 falcon
 bjoern
