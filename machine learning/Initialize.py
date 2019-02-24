@@ -1,4 +1,5 @@
 import keras
+import os
 from keras.models import Sequential
 from keras.layers.core import Dense
 from keras.optimizers import Adam
@@ -30,6 +31,7 @@ def initialize_fen():
     # Initializes the board state with correctly set up pieces for the beginning of the game
 
     fen_notation='rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    with open("./Board State/previousFEN.txt", "w+") as text_file:
-        print(fen_notation, file=text_file)
+    if not os.path.exists("./Board State/previousFEN.txt"):
+        with open("./Board State/previousFEN.txt", "w+") as text_file:
+            print(fen_notation, file=text_file)
 
