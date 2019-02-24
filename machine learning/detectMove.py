@@ -19,7 +19,7 @@ def detect_move(model, piece, new_fen):
 
     # List of possible moves(i.e. destination squares) for the given piece
     # HARDCODED (will later use AI's functionality of predicting the possible moves for a given piece)
-    image_names = ['b5.jpg', 'a6.jpg', 'b3.jpg', 'a2.jpg', 'd4.jpg', 'd3.jpg', 'e2.jpg', 'f1.jpg']
+    image_names = ['e3.jpg', 'e4.jpg']
 
     # Add the possible destination squares to the testing data
     data = []
