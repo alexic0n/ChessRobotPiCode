@@ -8,7 +8,8 @@ from Initialize import initialize_fen
 import falcon
 
 # Import your endpoint classes:
-from endpoints import default, learn
+import learn
+import default
 
 #Initialize board state using FEN notation
 initialize_fen()
