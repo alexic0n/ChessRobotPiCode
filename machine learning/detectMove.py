@@ -64,7 +64,7 @@ def detect_move(model, piece, new_fen):
     new_fen = new_fen[:-1] + ' ' + additional_notation
 
     # Save the new FEN notation into the .txt file
-    with open("Board state/previousFEN.txt", "w") as text_file:
+    with open("Board State/previousFEN.txt", "w") as text_file:
         print(new_fen, file=text_file)
     return piece_position
 
