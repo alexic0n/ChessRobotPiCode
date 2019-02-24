@@ -28,22 +28,15 @@ class LearnResource(object):
       # Nothing to do
       return
 
-    ext = mimetypes.guess_extension(req.content_type)
-    if not (ext == '.jpeg' or ext == '.jpg') :
-      print("[ERROR] 400: Not a JPEG.")
-      raise falcon.HTTPBadRequest(
-        description = 'Not a JPEG.'
-      )
+    name = '{uuid}.jpg'.format(uuid=uuid.uuid4())
 
-    name = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
-
-    storage_path = './images'
+    storage_path = './Logitech Webcam'
 
     image_path = os.path.join(storage_path, name)
 
     with io.open(image_path, 'wb') as image_file:
       while True:
-        chunk = req.stream.read(self._CHUNK_SIZE_BYTES)
+        chunk = req.stream.read(4096)
         if not chunk:
           break
 
@@ -70,5 +63,5 @@ class LearnResource(object):
     print(('{} moved from {} to {}').format(piece, empty_square, piece_position))
 
     resp.status = falcon.HTTP_201
-    with open('./Board State/previousFEN') as r:
+    with open('./Board State/previousFEN.txt') as r:
       resp.body = r.read()
