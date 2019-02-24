@@ -1,7 +1,8 @@
 tensorflow
 keras
-glob
-cv2
+glob3
+opencv-python
 numpy
-PIL
-sys
+pillow
+falcon
+bjoern

@@ -29,7 +29,7 @@ class LearnResource(object):
       return
 
     ext = mimetypes.guess_extension(req.content_type)
-    if not ext == '.jpeg':
+    if not (ext == '.jpeg' or ext == '.jpg') :
       print("[ERROR] 400: Not a JPEG.")
       raise falcon.HTTPBadRequest(
         description = 'Not a JPEG.'
