@@ -1,0 +1,7 @@
+tensorflow
+keras
+glob
+cv2
+numpy
+PIL
+sys
