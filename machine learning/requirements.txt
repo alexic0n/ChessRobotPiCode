@@ -1,9 +1,9 @@
 tensorflow
 keras
 glob3
-cv2
+opencv-python
 numpy
-PIL
+pillow
 sys
 falcon
 bjoern
