@@ -64,4 +64,4 @@ class LearnResource(object):
 
     resp.status = falcon.HTTP_201
     with open('./Board State/previousFEN.txt') as r:
-      resp.body = r.read()
+      resp.body = '{} moved from {} to {}\n{}'.format(piece, empty_square, piece_position, r.read())
