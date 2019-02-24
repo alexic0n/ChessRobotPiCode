@@ -30,6 +30,6 @@ def initialize_fen():
     # Initializes the board state with correctly set up pieces for the beginning of the game
 
     fen_notation='rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    with open("Board state/previousFEN.txt", "w+") as text_file:
+    with open("./Board State/previousFEN.txt", "w+") as text_file:
         print(fen_notation, file=text_file)
 
