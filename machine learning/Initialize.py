@@ -1,5 +1,4 @@
 import keras
-import os
 from keras.models import Sequential
 from keras.layers.core import Dense
 from keras.optimizers import Adam
@@ -18,20 +17,4 @@ def load_weights():
     model.load_weights('model/model.h5')
     print("WEIGHTS LOADED")
     return model
-
-# lowercase - black
-# uppercase - white
-# * - empty square
-# w - whites turn
-# KQkq - castling available for both black and white
-# '-' - no en passant available
-# 0 - no half moves
-# 1 - first move
-def initialize_fen():
-    # Initializes the board state with correctly set up pieces for the beginning of the game
-
-    fen_notation='rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    if not os.path.exists("./Board State/previousFEN.txt"):
-        with open("./Board State/previousFEN.txt", "w+") as text_file:
-            print(fen_notation, file=text_file)
 

@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-def detect_move(model, piece, new_fen):
+def detect_move(model, piece, empty_square, new_fen, legalmoves):
     # Read rows from the FEN notation of the previous board state
     r8, r7, r6, r5, r4, r3, r2, last = new_fen.split('/')
     r1 = last.split(' ')[0]
@@ -17,13 +17,17 @@ def detect_move(model, piece, new_fen):
     right = (pixels + new_pixels) / 2
     bottom = (pixels + new_pixels) / 2
 
+
+
     # List of possible moves(i.e. destination squares) for the given piece
-    # HARDCODED (will later use AI's functionality of predicting the possible moves for a given piece)
-    image_names = ['e3.jpg', 'e4.jpg']
+    legalDestinations = []
+    for move in legalmoves:
+        if move[0:2] == empty_square:
+            legalDestinations.append(move[2:4] + '.jpg')
 
     # Add the possible destination squares to the testing data
     data = []
-    for image_name in image_names:
+    for image_name in legalDestinations:
         image = Image.open(('Logitech Webcam/Cropped/{}').format(image_name))
         image = image.crop((left, top, right, bottom))
         image = image.resize((pixels, pixels), Image.ANTIALIAS)
@@ -42,7 +46,7 @@ def detect_move(model, piece, new_fen):
         max_index = max_index_black
     else:
         max_index = max_index_wooden
-    piece_position = image_names[max_index][0:2]
+    piece_position = legalDestinations[max_index][0:2]
     row_str = row_list[len(row_list) - int(piece_position[1])]
     column = ord(piece_position[0]) - ord('a')
 
@@ -63,8 +67,5 @@ def detect_move(model, piece, new_fen):
         new_fen = new_fen + row + '/'
     new_fen = new_fen[:-1] + ' ' + additional_notation
 
-    # Save the new FEN notation into the .txt file
-    with open("Board State/previousFEN.txt", "w") as text_file:
-        print(new_fen, file=text_file)
-    return piece_position
+    return new_fen, piece_position
 

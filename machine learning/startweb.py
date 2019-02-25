@@ -3,16 +3,12 @@
 
 import bjoern
 from ipaddress import ip_address
-from Initialize import initialize_fen
 
 import falcon
 
 # Import your endpoint classes:
 import learn
 import default
-
-#Initialize board state using FEN notation
-initialize_fen()
 
 # falcon.API instances are callable WSGI apps, initialise the app
 MachineLearning = api = falcon.API()

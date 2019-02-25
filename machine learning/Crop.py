@@ -19,7 +19,6 @@ def crop_squares(path):
         letter = 'a'
         start = i * 8
         end = (i + 1) * 8
-
         for j in range(start, end):
             box = (prW, prH, sqW, sqH)
             board = img.crop(box)
