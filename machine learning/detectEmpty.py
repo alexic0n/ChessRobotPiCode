@@ -1,14 +1,10 @@
 import sys
 import numpy as np
 from PIL import Image
-sys.path.append('util/pythonchess')
-import chess
 def detect_empty(model, fen_notation):
     # Read rows from the FEN notation of the previous board state
     r8, r7, r6, r5, r4, r3, r2, last = fen_notation.split('/')
     r1 = last.split(' ')[0]
-
-    board = chess.Board(fen_notation)
 
     row_num = 8
     image_names = []
