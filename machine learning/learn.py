@@ -9,8 +9,6 @@ import cv2
 import glob
 from BoardDetection import segmentation_board as find_corners
 from Crop import crop_squares
-from Initialize import load_weights
-from Initialize import initialize_fen
 from detectEmpty import detect_empty
 from detectMove import detect_move
 
