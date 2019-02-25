@@ -12,6 +12,7 @@ from classes.redbluecoordinates import *
 from classes.segmentation import *
 from util.util import *
 import requests
+import json
 
 def userTurn(board, computerSide, redblue, topleft, bottomright): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
@@ -32,11 +33,12 @@ def userTurn(board, computerSide, redblue, topleft, bottomright): #this basicall
     image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
 
     cv.imwrite(img_path, image)
+    currentLegalMoves = getLegalMoves(board)
 
     r = requests.post("http://www.checkmate.tardis.ed.ac.uk/learn", files={
         'img': open(img_path, 'rb'),
         'fen': board.fen(),
-        'moves': board.legal_moves()
+        'moves': currentLegalMoves
     })
 
     data = r.json()
@@ -54,6 +56,13 @@ def userTurn(board, computerSide, redblue, topleft, bottomright): #this basicall
         return userTurn(board,computerSide,redblue,topleft,bottomright)
     board.push(move)
     return True
+
+def getLegalMoves(board):
+    x = board.legal_moves()
+    legalMoves = []
+    for move in x:
+        legalMoves.append(str(move))
+    return json.dumps(legalMoves)
 
 def gameplayloop(board):
     thinkTime = input("How long should I think per turn: ") #user can play as white or black, however for now it only works if white is at bottom of image and black is at top.
