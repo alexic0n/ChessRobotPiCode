@@ -6,8 +6,8 @@ from util import *
 # boardDimensions: a dictionary of coordinates for the sides of the board
 # enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
-    print(f"Move: {move}")
-    print(f"Board: {board}")
+    print(f"Move: {move[0:2]} -> {move[2:4]}")
+    # print(f"Board: {board}")
     
     assert len(move) == 4
     assert len(board) == 64 + 7
