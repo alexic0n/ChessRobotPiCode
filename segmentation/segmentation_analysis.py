@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 # smooth histogram
 def his_smooth(his, step):
@@ -75,8 +75,8 @@ def segmentation_board(image):
 
     # 3: summing the edge and smooth the graph
 
-    sum_vertical = his_smooth(img_edge.sum(1), d)
-    sum_horizontal = his_smooth(img_edge.sum(0), d)
+    sum_vertical = his_smooth(img_edge.sum(1), 0)
+    sum_horizontal = his_smooth(img_edge.sum(0), 0)
 
     # 4: get peaks and bottom
 
@@ -87,16 +87,16 @@ def segmentation_board(image):
 
         while 1:
 
-            k1 = k1 * 2
+            k1 = np.math.ceil(1.5 * k1)
 
             peaks_horizontal = []
             bottom_horizontal = []
 
             meter = max(sum_horizontal) / k1
 
-            low = 0
-            high = 0
-            peak = 0
+            low = sum_horizontal[0]
+            high = sum_horizontal[0]
+            peak = -1
             bottom = 0
 
             for i in range(1, h):
@@ -128,16 +128,16 @@ def segmentation_board(image):
 
         while 1:
 
-            k2 = k2 * 2
+            k2 = np.math.ceil(1.5 * k2)
 
             peaks_vertical = []
             bottom_vertical = []
 
             meter = max(sum_horizontal) / k2
 
-            low = 0
-            high = 0
-            peak = 0
+            low = sum_horizontal[0]
+            high = sum_horizontal[0]
+            peak = -1
             bottom = 0
 
             for i in range(1, w):
