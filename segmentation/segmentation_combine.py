@@ -2,15 +2,36 @@ import cv2
 import numpy as np
 
 
-def segmentation_board(image_color, template_color=[]):
+def segmentation_board(image_color, template_color=[], previous_coordinate=[]):
+    # when there is no template
     if len(template_color) == 0:
         output = segmentation_analysis(image_color)
         template = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
         return template, output
+    # when there is template
     else:
         output = segmentation_template(image_color, template_color)
-        board = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
-        return board, output
+
+        # if previous coordinate has not been provided
+        if len(previous_coordinate) == 0:
+            board = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
+            return board, output
+
+        else:
+            output2 = segmentation_analysis(image_color)
+
+            if distance_between(output[0], output2[0]) < (len(template_color) / 8) * (len(template_color) / 8):
+                board = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
+                return board, output
+            else:
+                board = image_color[previous_coordinate[0][1]:previous_coordinate[1][1],
+                        previous_coordinate[0][0]:previous_coordinate[1][0]]
+                return board, previous_coordinate
+
+
+# help function: find square of distance between coordinates
+def distance_between(c1, c2):
+    return (c1[0] - c2[0]) * (c1[0] - c2[0]) + (c1[1] - c2[1]) * (c1[1] - c2[1])
 
 
 # help function: smooth histogram
@@ -263,7 +284,7 @@ def segmentation_template(image_color, template_color):
     template = cv2.cvtColor(template_color, cv2.COLOR_BGR2GRAY)
 
     # 2: define the compare_method and get the size of template
-    compare_method = eval('cv2.TM_CCOEFF_NORMED')
+    compare_method = eval('cv2.TM_CCOEFF')
     w, h = template.shape[::-1]
 
     # 3: run template matching
