@@ -8,13 +8,12 @@ import chess.engine
 import cv2 as cv
 import glob
 from classes.aiInterface import *
-from classes.redbluecoordinates import *
 from classes.segmentation import *
 from util.util import *
 import requests
 import json
 
-def userTurn(board, computerSide, redblue, topleft, bottomright): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
+def userTurn(board, computerSide, topleft, bottomright): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
@@ -50,10 +49,10 @@ def userTurn(board, computerSide, redblue, topleft, bottomright): #this basicall
     if(realboard == "q"):
         return False
     if(realboard == "imagereadfail"):
-        return userTurn(board,computerSide,redblue,topleft,bottomright)
+        return userTurn(board,computerSide,topleft,bottomright)
     result, move = computerSide.userTurn(realboard)
     if not result:
-        return userTurn(board,computerSide,redblue,topleft,bottomright)
+        return userTurn(board,computerSide,topleft,bottomright)
     board.push(move)
     return True
 
