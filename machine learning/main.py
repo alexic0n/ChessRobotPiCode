@@ -14,7 +14,6 @@ import requests
 import json
 
 def userTurn(board, computerSide, topleft, bottomright): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
-    print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
         return False
@@ -23,6 +22,8 @@ def userTurn(board, computerSide, topleft, bottomright): #this basically just ha
     continueGame = input("Type q to quit.")
     if(continueGame == "q"):
         return False
+    
+    print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
 
     # Take last image from the webcam
     paths = glob.glob('Logitech Webcam/*.jpg')
@@ -42,17 +43,10 @@ def userTurn(board, computerSide, topleft, bottomright): #this basically just ha
 
     data = r.json()
 
-    realboard = data['fen']
+    move = data['move']
 
-    #realboard = redblue.getBoardState(topleft,bottomright)
-    # Server will send the fen notation and store it in realboard
-    if(realboard == "q"):
-        return False
-    if(realboard == "imagereadfail"):
-        return userTurn(board,computerSide,topleft,bottomright)
-    result, move = computerSide.userTurn(realboard)
-    if not result:
-        return userTurn(board,computerSide,topleft,bottomright)
+    #if not result:
+    #    return userTurn(board,computerSide,topleft,bottomright)
     board.push(move)
     return True
 
