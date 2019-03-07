@@ -21,32 +21,14 @@ class ChessMatch:
         self.board.push(a)
         return a
 
-    def userTurn(self, updatedBoardFen):
+    def userTurn(self, empty_square):
         legalMoves = self.board.legal_moves
-        for a in legalMoves:
-            self.board.push(a)
-            if(updatedBoardFen == self.convertBW(self.board.fen())):
-                print("\nMatch found, now my turn to make a move..")
-                return True, a
-            self.board.pop()
-        return False, False
+        legalDestinations = []
+        for element in legalMoves:
+            if element[0:2] == empty_square:
+                legalDestinations.append(element[2:4])
 
-    def convertBW(self, toConv):
-        boardState = toConv.split(' ')[0]
-        forRet = ''
-        counter = 0
-        while(counter < len(boardState)):
-            current = boardState[counter]
-            if(current.isupper()):
-                forRet = forRet + 'w'
-            elif(current.islower()):
-                forRet = forRet + 'b'
-            elif(current in '12345678'):
-                aster = int(current)
-                while(aster > 0):
-                    forRet = forRet + '*'
-                    aster = aster - 1
-            else:
-                forRet = forRet + boardState[counter]
-            counter = counter + 1
-        return forRet
+        if len(legalDestinations) == 0:
+            return False, []
+        else:
+            return True, legalDestinations
