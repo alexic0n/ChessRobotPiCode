@@ -20,15 +20,3 @@ class ChessMatch:
         a = self.engine.play(self.board,self.limit).move
         self.board.push(a)
         return a
-
-    def userTurn(self, empty_square):
-        legalMoves = self.board.legal_moves
-        legalDestinations = []
-        for element in legalMoves:
-            if element[0:2] == empty_square:
-                legalDestinations.append(element[2:4])
-
-        if len(legalDestinations) == 0:
-            return False, []
-        else:
-            return True, legalDestinations
