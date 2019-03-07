@@ -50,9 +50,11 @@ class LearnResource(object):
     ## Detect the most probable destination square
     new_fen, piece_position = detect_move(model, piece, empty_square, new_fen, legalmoves)
     print(('{} moved from {} to {}').format(piece, empty_square, piece_position))
+    
+    move = empty_square + piece_position
 
     resp.status = falcon.HTTP_201
     resp.body = json.dumps({
-      'fen': new_fen,
+      'move': move,
       'status': '{} moved from {} to {}'.format(piece, empty_square, piece_position)
     })
