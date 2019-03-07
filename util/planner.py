@@ -1,4 +1,5 @@
 from util import *
+from castling import *
 
 # move: a 4 length string move
 # board: the FEN notation with * for the state of the board
@@ -39,6 +40,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
     # SPECIAL MOVES ############################################################
 
     # castling
+    print("movefrom", moveFrom)
     rookMove = castlingRookMove(moveFrom, moveTo, splitBoard)
     if (rookMove != None):
         print("Castling!")
@@ -95,28 +97,6 @@ def movePiece(moveFrom, moveTo):
         f"move to: {moveTo}",
         "drop"
     ]
-
-def castlingRookMove(moveFrom, moveTo, splitBoard):
-    y = moveFrom["y"]
-    isWhiteKing = splitBoard[y][moveFrom["x"]] == "K"
-    isBlackKing = splitBoard[y][moveFrom["x"]] == "k"
-    movedLeftTwo = moveFrom["x"] - moveTo["x"] == 2
-    movedRightTwo = moveFrom["x"] - moveTo["x"] == -2
-    leftIsWhiteRook = splitBoard[y][0] == "R"
-    rightIsWhiteRook = splitBoard[y][7] == "R"
-    leftIsBlackRook = splitBoard[y][0] == "r"
-    rightIsBlackRook = splitBoard[y][7] == "r"
-
-    if (isWhiteKing and movedLeftTwo and leftIsWhiteRook):
-        return {"from": {"x": 0, "y": y}, "to": {"x": 3, "y": y}}
-    if (isWhiteKing and movedRightTwo and rightIsWhiteRook):
-        return {"from": {"x": 7, "y": y}, "to": {"x": 5, "y": y}}
-    if (isBlackKing and movedLeftTwo and leftIsBlackRook):
-        return {"from": {"x": 0, "y": y}, "to": {"x": 3, "y": y}}
-    if (isBlackKing and movedRightTwo and rightIsBlackRook):
-        return {"from": {"x": 7, "y": y}, "to": {"x": 5, "y": y}}
-
-    return None
 
 
 
@@ -216,6 +196,18 @@ actions = plan(
     "e1c1",
     "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/R***KBNR",
     {"e1": {"x": 4.51, "y": 7.51}, "a1": {"x": 0.51, "y": 7.51}},
+    {"left": 0, "right": 8, "top": 0, "bottom": 8},
+    "-"
+)
+print("Actions:")
+for action in actions: print(action)
+
+
+print("\nUNUSUAL CASTLING:")
+actions = plan(
+    "g1e1",
+    "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/*R****K*",
+    {"g1": {"x": 6.51, "y": 7.51}, "b1": {"x": 1.51, "y": 7.51}},
     {"left": 0, "right": 8, "top": 0, "bottom": 8},
     "-"
 )
