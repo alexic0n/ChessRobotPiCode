@@ -10,6 +10,7 @@ from util.castling import *
 # enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
+    print("Board dimensions:", boardDimensions)
     # print("Board:", board)
 
     # if no coordinates given, assume middle for all

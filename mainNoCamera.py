@@ -48,7 +48,7 @@ def gameplayloop(board):
             if board.ep_square: enpassant = chess.square_name(board.ep_square)
             else: enpassant = "-"
             actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
-            print("Plan:", actions)
+            for action in actions: print("action:", action)
 
             board.push(x)
             stopNow = userTurn(board, computerSide)
@@ -71,7 +71,7 @@ def gameplayloop(board):
             if board.ep_square: enpassant = chess.square_name(board.ep_square)
             else: enpassant = "-"
             actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
-            print("Plan:", actions)
+            for action in actions: print("action:", action)
 
             board.push(x)
             
