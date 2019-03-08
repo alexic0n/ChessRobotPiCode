@@ -5,11 +5,9 @@ import sys
 sys.path.append("util/pythonchess")
 import chess
 import chess.engine
-import cv2 as cv
 from classes.aiInterface import *
-from classes.redbluecoordinates import *
-from classes.segmentation import *
 from util.util import *
+from util.planner import *
 
 def userTurn(board, computerSide):
     print("The current board state is:\n")
@@ -41,6 +39,17 @@ def gameplayloop(board):
     if(wOrB == 'b'):
         while(True):
             x = computerSide.aiTurn()
+
+            # Planning
+            move = str(x)
+            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
+            coordinates = None  # assume middle for all squares
+            boardDimensions = {"left": 0, "right": 8, "top": 0, "bottom": 8}
+            if board.ep_square: enpassant = chess.square_name(board.ep_square)
+            else: enpassant = "-"
+            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
+            print("Plan:", actions)
+
             board.push(x)
             stopNow = userTurn(board, computerSide)
             if(not stopNow):
@@ -53,7 +62,19 @@ def gameplayloop(board):
                 computerSide.endgame()
                 break
             x = computerSide.aiTurn()
+
+            # Planning
+            move = str(x)
+            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
+            coordinates = None  # assume middle for all squares
+            boardDimensions = {"left": 0, "right": 8, "top": 0, "bottom": 8}
+            if board.ep_square: enpassant = chess.square_name(board.ep_square)
+            else: enpassant = "-"
+            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
+            print("Plan:", actions)
+
             board.push(x)
+            
 
 def main():
     board = chess.Board()

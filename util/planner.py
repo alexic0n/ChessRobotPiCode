@@ -1,5 +1,7 @@
-from util import *
-from castling import *
+# Use runPlanner.py to run this file !!!
+
+from util.util import *
+from util.castling import *
 
 # move: a 4 length string move
 # board: the FEN notation with * for the state of the board
@@ -7,8 +9,12 @@ from castling import *
 # boardDimensions: a dictionary of coordinates for the sides of the board
 # enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
-    print(f"Move: {move[0:2]} -> {move[2:4]}")
-    # print(f"Board: {board}")
+    print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
+    # print("Board:", board)
+
+    # if no coordinates given, assume middle for all
+    if coordinates == None:
+        coordinates = allMiddleSquares(boardDimensions)
     
     assert len(move) == 4
     assert len(board) == 64 + 7
@@ -40,7 +46,6 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
     # SPECIAL MOVES ############################################################
 
     # castling
-    print("movefrom", moveFrom)
     rookMove = castlingRookMove(moveFrom, moveTo, splitBoard)
     if (rookMove != None):
         print("Castling!")
@@ -92,124 +97,22 @@ def getSquareMiddle(square, boardDimensions):
 
 def movePiece(moveFrom, moveTo):
     return [
-        f"move to: {moveFrom}",
+        "move to: %s" % moveFrom,
         "pick up",
-        f"move to: {moveTo}",
+        "move to: %s" % moveTo,
         "drop"
     ]
 
-
-
-
-# EXAMPLE USES #################################################################
-
-# in these examples the board is 8x8 units big, with the top left corner being 0,0
-# to represent a piece being off-centre x.51 is used, the planner will then place pieces
-# exactly at x.5
-
-print("\nNORMAL MOVE:")
-actions = plan(
-    "a2a4",
-    "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
-    {"a2": {"x": 0.51, "y": 6.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nTAKE PIECE:")
-actions = plan(
-    "b3a4",
-    "rnbqkbnr/*ppppppp/********/********/p*******/*P******/P*PPPPPP/RNBQKBNR",
-    {"b3": {"x": 1.51, "y": 5.51}, "a4": {"x": 0.51, "y": 4.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nEN PASSANT:")
-actions = plan(
-    "b4a3",
-    "rnbqkbnr/p*pppppp/********/********/Pp******/********/*PPPPPPP/RNBQKBNR",
-    {"a4": {"x": 0.51, "y": 4.51}, "b4": {"x": 1.51, "y": 4.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "a3"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nEN PASSANT THE OTHER WAY:")
-actions = plan(
-    "a5b6",
-    "rnbqkbnr/p*pppppp/********/Pp******/********/********/*PPPPPPP/RNBQKBNR",
-    {"a5": {"x": 0.51, "y": 3.51}, "b5": {"x": 1.51, "y": 3.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "b6"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nCASTLING RIGHT TOP:")
-actions = plan(
-    "e8g8",
-    "rnbqk**r/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
-    {"e8": {"x": 4.51, "y": 0.51}, "h8": {"x": 7.51, "y": 0.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nCASTLING LEFT TOP:")
-actions = plan(
-    "e8c8",
-    "r***kbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR",
-    {"e8": {"x": 4.51, "y": 0.51}, "a8": {"x": 0.51, "y": 0.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nCASTLING RIGHT BOTTOM:")
-actions = plan(
-    "e1g1",
-    "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQK**R",
-    {"e1": {"x": 4.51, "y": 7.51}, "h1": {"x": 7.51, "y": 7.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nCASTLING LEFT BOTTOM:")
-actions = plan(
-    "e1c1",
-    "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/R***KBNR",
-    {"e1": {"x": 4.51, "y": 7.51}, "a1": {"x": 0.51, "y": 7.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
-
-
-print("\nUNUSUAL CASTLING:")
-actions = plan(
-    "g1e1",
-    "rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/*R****K*",
-    {"g1": {"x": 6.51, "y": 7.51}, "b1": {"x": 1.51, "y": 7.51}},
-    {"left": 0, "right": 8, "top": 0, "bottom": 8},
-    "-"
-)
-print("Actions:")
-for action in actions: print(action)
+# returns a list of all squares and their middle positions
+def allMiddleSquares(boardDimensions):
+    out = {}
+    squareSizeX = (boardDimensions["right"] - boardDimensions["left"]) / 8
+    squareSizeY = (boardDimensions["bottom"] - boardDimensions["top"]) / 8 
+    for x in range(8):
+        for y in range(8):
+            move = coordinatesToSquare({"x": x, "y": y})
+            out[move] = {
+                "x": squareSizeX * x + squareSizeX / 2, 
+                "y": squareSizeY * y + squareSizeY / 2
+            }
+    return out
