@@ -11,10 +11,11 @@ class coordinateFinder:
         self.coordinates = {}
 
 
-    def getBoardState(self, topleft,bottomright,vc):
-        x = input("Enter y to confirm you have made your move, or q to quit: ")
-        if(x == "q"):
-            return "q"
+    def getBoardState(self, topleft,bottomright,vc,bypass = False):
+        if not bypass:
+            x = input("Enter y to confirm you have made your move, or q to quit: ")
+            if(x == "q"):
+                return "q"
         counter = 0
         while(counter < 5):
             ret,img = vc.read()

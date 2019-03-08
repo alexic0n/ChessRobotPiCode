@@ -7,6 +7,7 @@ def segmentation_board(image_color, template_color=[], previous_coordinate=[]):
     if len(template_color) == 0:
         output = segmentation_analysis(image_color)
         template = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
+        cv2.imwrite("cropped.jpg", template)
         return template, output
     # when there is template
     else:
