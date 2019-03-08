@@ -2,8 +2,14 @@ import cv2 as cv
 import numpy as np
 import math
 import datetime
+from util.util import *
 
 class coordinateFinder:
+
+
+    def __init__(self):
+        self.coordinates = {}
+
 
     def getBoardState(self, topleft,bottomright,vc):
         x = input("Enter y to confirm you have made your move, or q to quit: ")
@@ -20,20 +26,29 @@ class coordinateFinder:
         img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
         dimensions = img.shape
         hsvImg = self.convertHSV(img)
-        redCoor = self.processRed(hsvImg,dimensions)
-        blueCoor = self.processBlue(hsvImg,dimensions)
+        redCoor, redNames = self.processRed(hsvImg,dimensions)
+        blueCoor, blueNames = self.processBlue(hsvImg,dimensions)
         bwFenTemp = "********/********/********/********/********/********/********/********"
         bwFen = []
         counter = 0
+        self.coordinates = {}
         while (counter < 71):
             bwFen.insert(counter,bwFenTemp[counter])
             counter += 1
-        for black in blueCoor:
-            x,y = black
+        for i in range(len(blueCoor)):
+            blueLocation = blueCoor[i]
+            blueName = blueNames[i]
+            x,y = blueName
+            blueNameString = coordinatesToSquare({"x": x, "y": y})
+            self.coordinates[blueNameString] = {"x": blueLocation[0], "y": blueLocation[1]}
             pos = y*9 + x
             bwFen[pos] = "b"
-        for white in redCoor:
-            x,y = white
+        for i in range(len(redCoor)):
+            whiteLocation = redCoor[i]
+            redName = redNames[i]
+            x,y = redName
+            redNameString = coordinatesToSquare({"x": x, "y": y})
+            self.coordinates[redNameString] = {"x": whiteLocation[0], "y": whiteLocation[1]}
             pos = y*9 + x
             bwFen[pos] = "w"
         print("")
@@ -48,8 +63,8 @@ class coordinateFinder:
         cv.imwrite("x.jpg",self.drawgrid(toWrite,dimensions))
         coordinatesRed = []
         self.getCentres(forRed, coordinatesRed)
-        redCoor = self.whichSquare(coordinatesRed,dimensions)
-        return redCoor
+        redNames = self.whichSquare(coordinatesRed,dimensions)
+        return coordinatesRed, redNames
 
     def processBlue(self,hsvImg,dimensions):
         bluefilter = self.convertBlue(hsvImg)
@@ -59,8 +74,8 @@ class coordinateFinder:
         cv.imwrite("y.jpg",self.drawgrid(toWrite,dimensions))
         coordinatesBlue = []
         self.getCentres(forBlue, coordinatesBlue)
-        blueCoor = self.whichSquare(coordinatesBlue,dimensions)
-        return blueCoor
+        blueNames = self.whichSquare(coordinatesBlue,dimensions)
+        return coordinatesBlue, blueNames
 
     def convertHSV(self,image):
         hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
@@ -76,7 +91,7 @@ class coordinateFinder:
             xClass = x/sq_width
             yClass = y/sq_height
             #gridCoor.insert(0, (letterCoor[math.floor(xClass)],(8-math.floor(yClass))))
-            gridCoor.insert(0,(math.floor(xClass),math.floor(yClass)))
+            gridCoor.append((math.floor(xClass),math.floor(yClass)))
         return gridCoor
 
 

@@ -8,11 +8,23 @@ import chess.engine
 import cv2 as cv
 from classes.aiInterface import *
 from classes.redbluecoordinates import *
-from classes.segmentation import *
+# from classes.segmentation import *
+from util.segmentation_combine import *
 from util.util import *
+from util.parallax_shift import *
+from util.planner import *
 
-def userTurn(board, computerSide, redblue, topleft, bottomright,vc): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
-    print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
+def userTurn(board, computerSide, redblue, topleft, bottomright,vc):
+    #print("The current board state is:\n") #show the user the current board on command line
+    #print(board)
+    #print("\nYour legal moves are: ")
+    #counter = 0
+    #listOfLegalMoves = []
+    #for a in board.legal_moves:
+        #listOfLegalMoves.insert(counter,str(a))
+        #print(a)
+        #counter = counter + 1
+    print("\nMake your move on the board.")
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
         return False
@@ -30,21 +42,39 @@ def userTurn(board, computerSide, redblue, topleft, bottomright,vc): #this basic
     return True
 
 def gameplayloop(board):
-    wOrB = input("White or black (w/b): ") #determine the user settings for the game, if you want to win I recommend 0.0001 deconds think time
-    thinkTime = input("How long should I think per turn: ") #user can play as white or black, however for now it only works if white is at bottom of image and black is at top.
+    wOrB = input("White or black (w/b): ")
+    thinkTime = input("How long should I think per turn: ")
     x = input("Please confirm the board is clear before proceeding.")
     vc = cv.VideoCapture(0)
     ret,emptyboardimage = vc.read()
-    topleft, bottomright = segmentation_board(emptyboardimage) #find the coordinates of the board within the camera frame
-    topleft[0] -= 20 #factor in parallax, will be tuned when final hardware design is established
-    topleft[1] -=20
-    bottomright[0] += 20
-    bottomright[1] +=20
-    computerSide = ChessMatch(float(thinkTime)) #set up our AI interface, initialised with a time it may process the board for
+    template, [topleft, bottomright] = segmentation_board(emptyboardimage)
+    centerX = emptyboardimage.shape[0] / 2
+    centerY = emptyboardimage.shape[1] / 2
+    topleft = parallax_shift(topleft, [centerX, centerY], 100, 6)
+    bottomright = parallax_shift(bottomright, [centerX, centerY], 100, 6)
+    print("tl", topleft)
+    print("br", bottomright)
+    computerSide = ChessMatch(float(thinkTime))
     redblue = coordinateFinder()
-    if(wOrB == 'b'): #run the game recursively until the user quits or checkmate is achieved
+    if(wOrB == 'b'):
         while(True):
-            x = computerSide.aiTurn() #obtain the move the ai would make
+            x = computerSide.aiTurn()
+
+            # Planning
+            move = str(x)
+            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
+            coordinates = redblue.coordinates  # assume middle for all squares
+            boardDimensions = {
+                "left": topleft[0], 
+                "right": bottomright[0], 
+                "top": topleft[1], 
+                "bottom": bottomright[1]
+            }
+            if board.ep_square: enpassant = chess.square_name(board.ep_square)
+            else: enpassant = "-"
+            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
+            for action in actions: print("action:", action)
+
             board.push(x)
             print("AI makes move: {}.".format(x),"\n")
             print(board)
@@ -55,10 +85,27 @@ def gameplayloop(board):
     else:
         while(True):
             stopNow = userTurn(board, computerSide, redblue, topleft, bottomright,vc)
+            print(redblue.coordinates)
             if(not stopNow):
                 computerSide.endgame()
                 break
             x = computerSide.aiTurn()
+
+            # Planning
+            move = str(x)
+            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
+            coordinates = redblue.coordinates  # assume middle for all squares
+            boardDimensions = {
+                "left": topleft[0], 
+                "right": bottomright[0], 
+                "top": topleft[1], 
+                "bottom": bottomright[1]
+            }
+            if board.ep_square: enpassant = chess.square_name(board.ep_square)
+            else: enpassant = "-"
+            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
+            for action in actions: print("action:", action)
+
             board.push(x)
             print("AI makes move: {}.".format(x),"\n")
             print(board)

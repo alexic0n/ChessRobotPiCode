@@ -1,6 +1,7 @@
 *.pyc
 .vscode
 *.h5
+old
 machine learning/Logitech Webcam/*.jpg
 machine learning/Logitech Webcam/Cropped/*.jpg
 machine learning/Board State/previousFEN.txt
