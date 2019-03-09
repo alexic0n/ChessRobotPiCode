@@ -1,0 +1,6 @@
+[Unit]
+Description=Checkmate Python API on port 8000
+After=multi-user.target[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/machinelearning/web.py
+WantedBy=multi-user.target
