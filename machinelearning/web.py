@@ -34,7 +34,7 @@ def pieces():
 
     image_path = os.path.join(storage_path, name)
 
-    if not (request.files['board'] and request.form['fen'] and request.form['validmoves']):
+    if not (request.files['board'] and request.files['fen'] and request.files['validmoves']):
         abort('401')
     
     request.files['board'].save(image_path)
@@ -53,9 +53,9 @@ def pieces():
 
     # Move detection
     ## Detect the most probable origin square
-    (empty_square, piece, new_fen) = detect_empty(model, request.form['fen'])
+    (empty_square, piece, new_fen) = detect_empty(model, request.files['fen'].read().decode())
     ## Detect the most probable destination square
-    (piece_position, new_fen) = detect_move(model, piece, new_fen, request.form['validmoves'])
+    (piece_position, new_fen) = detect_move(model, piece, new_fen, request.files['validmoves'].read().decode())
     
     response = '{} moved from {} to {}\n{}'.format(piece, empty_square, piece_position, new_fen)
     
@@ -64,5 +64,5 @@ def pieces():
     return response
  
 if __name__ == '__main__':
-    bjoern.run(app, '0.0.0.0', 8000)
-    print("App running on port 8000")
+    #bjoern.run(app, '0.0.0.0', 8000)
+    app.run(host='0.0.0.0', port=8000)
