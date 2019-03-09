@@ -15,7 +15,7 @@ def load_weights():
         model.add(layer)
     model.add(Dense(6, activation='softmax'))
     model.compile(Adam(lr=.0001), loss='categorical_crossentropy', metrics=['accuracy'])
-    model.load_weights('model/model.h5')
+    model.load_weights(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'model.h5'))
     print("WEIGHTS LOADED")
     return model
 

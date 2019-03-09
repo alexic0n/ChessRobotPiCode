@@ -17,18 +17,20 @@ from model import model
 
 # Flask instances are callable WSGI apps, initialise the app
 app = Flask(__name__)
+app_root = os.path.dirname(os.path.abspath(__file__))
+
 
 # define your routes
 @app.route('/')
 def index():
-    with open('./README.md') as r:
+    with open(os.path.join(app_root, 'README.md')) as r:
         return Markup(markdown.markdown(r.read()))
 
 @app.route('/pieces', methods=['POST'])
 def pieces():
     name = '{uuid}.jpg'.format(uuid=uuid.uuid4())
 
-    storage_path = './images'
+    storage_path = os.path.join(app_root, 'images')
 
     image_path = os.path.join(storage_path, name)
 

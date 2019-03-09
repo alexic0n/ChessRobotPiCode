@@ -1,5 +1,8 @@
 import numpy as np
 from PIL import Image
+import os
+
+app_root = os.path.dirname(os.path.abspath(__file__))
 
 def detect_move(model, piece, new_fen, validmoves):
     # Read rows from the FEN notation of the previous board state
@@ -24,7 +27,7 @@ def detect_move(model, piece, new_fen, validmoves):
     # Add the possible destination squares to the testing data
     data = []
     for image_name in image_names:
-        image = Image.open(('images/Cropped/{}.jpg').format(image_name))
+        image = Image.open(os.path.join(app_root, 'images', 'Cropped', ('{}.jpg').format(image_name)))
         image = image.crop((left, top, right, bottom))
         image = image.resize((pixels, pixels), Image.ANTIALIAS)
         image = np.array(image)

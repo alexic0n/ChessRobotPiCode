@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from PIL import Image
 
 def detect_empty(model, previousFEN):
@@ -33,7 +34,7 @@ def detect_empty(model, previousFEN):
     # Add the detected white pieces in the previous board state to the testing data
     data = []
     for image_name in image_names:
-        image = Image.open(('images/Cropped/{}').format(image_name))
+        image = Image.open(os.path.join(app_root,'images', 'Cropped', '{}').format(image_name))
         image = image.crop((left, top, right, bottom))
         image = image.resize((pixels, pixels), Image.ANTIALIAS)
         image = np.array(image)

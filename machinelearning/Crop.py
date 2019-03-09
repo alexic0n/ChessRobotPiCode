@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import cv2 as cv
+import os
 from PIL import Image
+app_root = os.path.dirname(os.path.abspath(__file__))
 
 def crop_squares(path):
     # Crops a given image of a chessboard into 64 squares
@@ -25,7 +27,7 @@ def crop_squares(path):
             board = img.crop(box)
             board = board.resize((pixels, pixels), Image.ANTIALIAS)
             # Save the square into the Cropped folder
-            board.save(('images/Cropped/{}{}.jpg').format(letter, k))
+            board.save(os.path.join(app_root, 'images', 'Cropped', ('{}{}.jpg').format(letter, k)))
             prW = sqW
             sqW = sqW + width / 8
             letter = chr(ord(letter) + 1)
