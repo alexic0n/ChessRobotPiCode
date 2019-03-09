@@ -2,6 +2,6 @@
 .vscode
 *.h5
 old
-machine learning/images/*.jpg
-machine learning/images/Cropped/*.jpg
-machine learning/Board State/previousFEN.txt
+machinelearning/images/*.jpg
+machinelearning/images/Cropped/*.jpg
+machinelearning/Board State/previousFEN.txt
