@@ -11,7 +11,7 @@ class ChessMatch:
     def __init__(self,thinkTime):
         self.limit = chess.engine.Limit(time = thinkTime)
         self.board = chess.Board()
-        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/ChessBot/util/stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci("./util/stockfish-dice")
 
     def endgame(self):
         self.engine.quit()

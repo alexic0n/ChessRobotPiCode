@@ -2,7 +2,8 @@
 # from classes.boardState import *
 # from classes.move import *
 import sys
-sys.path.append("util/pythonchess")
+sys.path.append("./util/pythonchess")
+sys.path.append("./")
 import chess
 import chess.engine
 import cv2 as cv
@@ -26,7 +27,7 @@ def userTurn(board, computerSide, topleft, bottomright): #this basically just ha
     print("\nMake your move on the board.") #if it returns false, the game ends, otherwise the game continues through another recursive loop
 
     # Take last image from the webcam
-    paths = glob.glob('images/*.jpg')
+    paths = glob.glob('./machinelearning/images/*.jpg')
     img_path = paths[len(paths) - 1]
     image = cv.imread(img_path)
 
@@ -34,12 +35,16 @@ def userTurn(board, computerSide, topleft, bottomright): #this basically just ha
 
     cv.imwrite(img_path, image)
     currentLegalMoves = getLegalMoves(board)
+    print(currentLegalMoves)
 
+    print('Making request to Tardis.')
     r = requests.post("http://www.checkmate.tardis.ed.ac.uk/pieces", files={
-        'img': open(img_path, 'rb'),
+        'board': open(img_path, 'rb'),
         'fen': board.fen(),
-        'moves': currentLegalMoves
+        'validmoves': currentLegalMoves
     })
+
+    print(r)
 
     data = r.json()
 
@@ -51,18 +56,18 @@ def userTurn(board, computerSide, topleft, bottomright): #this basically just ha
     return True
 
 def getLegalMoves(board):
-    x = board.legal_moves()
+    x = board.legal_moves
     legalMoves = []
     for move in x:
         legalMoves.append(str(move))
-    return json.dumps(legalMoves)
+    return str(legalMoves)
 
 def gameplayloop(board):
     thinkTime = input("How long should I think per turn: ") #user can play as white or black, however for now it only works if white is at bottom of image and black is at top.
     x = input("Please confirm the board is clear before proceeding.")
 
     # Take last image from the webcam
-    paths = glob.glob('Logitech Webcam/*.jpg')
+    paths = glob.glob('./machinelearning/images/*.jpg')
     img_path = paths[len(paths) - 1]
     image = cv.imread(img_path)
 
