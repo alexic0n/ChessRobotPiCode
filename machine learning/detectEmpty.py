@@ -1,9 +1,9 @@
 import numpy as np
 from PIL import Image
 
-def detect_empty(model):
+def detect_empty(model, previousFEN):
     # Read rows from the FEN notation of the previous board state
-    fen_notation = open("Board State/previousFEN.txt", "r").read()
+    fen_notation = previousFEN
     r8, r7, r6, r5, r4, r3, r2, last = fen_notation.split('/')
     r1 = last.split(' ')[0]
     additional_notation = last.split(' ')[1] + ' ' + last.split(' ')[2] + ' ' + last.split(' ')[3] + ' ' + last.split(' ')[4] + ' ' + last.split(' ')[5]
@@ -33,7 +33,7 @@ def detect_empty(model):
     # Add the detected white pieces in the previous board state to the testing data
     data = []
     for image_name in image_names:
-        image = Image.open(('Logitech Webcam/Cropped/{}').format(image_name))
+        image = Image.open(('images/Cropped/{}').format(image_name))
         image = image.crop((left, top, right, bottom))
         image = image.resize((pixels, pixels), Image.ANTIALIAS)
         image = np.array(image)

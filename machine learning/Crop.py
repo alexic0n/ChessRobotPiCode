@@ -25,7 +25,7 @@ def crop_squares(path):
             board = img.crop(box)
             board = board.resize((pixels, pixels), Image.ANTIALIAS)
             # Save the square into the Cropped folder
-            board.save(('Logitech Webcam/Cropped/{}{}.jpg').format(letter, k))
+            board.save(('images/Cropped/{}{}.jpg').format(letter, k))
             prW = sqW
             sqW = sqW + width / 8
             letter = chr(ord(letter) + 1)

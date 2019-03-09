@@ -12,7 +12,7 @@ def main(argv):
     # Controls all other functions
 
     # Take last image from the webcam
-    paths = glob.glob('Logitech Webcam/*.jpg')
+    paths = glob.glob('images*.jpg')
     img_path = paths[len(paths) - 1]
     image = cv2.imread(img_path)
 
