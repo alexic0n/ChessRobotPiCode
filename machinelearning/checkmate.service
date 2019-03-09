@@ -5,7 +5,7 @@ Description=Checkmate Python API on port 8000
 ExecStart=/usr/bin/python3 /home/nogames/pi/machinelearning/web.py
 Restart=no
 KillSignal=SIGQUIT
-Type=notify
+Type=simple
 NotifyAccess=all
 
 [Install]
