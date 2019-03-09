@@ -2,6 +2,7 @@ from flask import Flask, request, abort, Markup
 import markdown
 import uuid
 import os
+import bjoern
 
 # ML classes
 import cv2
@@ -61,4 +62,5 @@ def pieces():
     return response
  
 if __name__ == '__main__':
-    app.run(port=8000)
+    bjoern.run(app, '0.0.0.0', 8000)
+    print("App running on port 8000")

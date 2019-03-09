@@ -12,6 +12,8 @@ Setup
 
 That's it.
 
+...well, on the Tardis box (we have an old CPU that can't do AVX) you'll want `tensorflow==1.5` otherwise it gets upset.
+
 Endpoint
 ----
 
