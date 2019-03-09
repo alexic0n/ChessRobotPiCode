@@ -7,8 +7,11 @@ Setup
 ----
 
   1. **Install dependencies**: nice and easy, we have pip. `pip install -r requirements.txt`
-  2. **Start Flask**: currently on the development server, which isn't ideal, but it does the trick:
-     `python web.py`
+  2. **Install the service**: run `install_service.sh` as root if this is the first time running the server
+  3. **Start the service**: currently on the development server, which isn't ideal, but it does the trick:
+     `systemctl start checkmate`
+
+You've also got the good-ol `python3 web.py` option as well if you want to watch the output.
 
 That's it.
 
