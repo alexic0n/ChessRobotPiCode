@@ -2,6 +2,8 @@ import numpy as np
 import os
 from PIL import Image
 
+app_root = os.path.dirname(os.path.abspath(__file__))
+
 def detect_empty(model, previousFEN):
     # Read rows from the FEN notation of the previous board state
     fen_notation = previousFEN
