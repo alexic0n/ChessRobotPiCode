@@ -51,7 +51,7 @@ def userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechE
 
 # capture, segment, shift corners, check
 def detectBoardLoop(vc):
-    print("segmenting board...")
+    print("Segmenting board...")
     counter = 0
     while(counter < 5):
         ret,img = vc.read()
@@ -62,16 +62,11 @@ def detectBoardLoop(vc):
     # topleft, bottomright = segmentation_board(emptyboardimage)
     template, [topleft, bottomright] = segmentation_board(emptyboardimage, is_empty_board = True)
 
-    # modified
-    # topleft = [158, 55]
-    # bottomright = [476, 379]
-    # emptyboardimage = cv.imread("EMPTYBOARDIMAGE.jpg")
-
     cropped = emptyboardimage[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
     cv.imwrite("cropped.jpg",cropped)
 
     if (topleft == [0,0] and bottomright == [0,0]):
-        inp = input("Could not find the board! Press Q to quit")
+        inp = input("Could not find the board! Press Q to quit: ")
         if (inp == "q"): return None, None
         return detectBoardLoop(vc)
 
@@ -80,12 +75,12 @@ def detectBoardLoop(vc):
     centerX = boardShapeX / 2
     centerY = boardShapeY / 2
 
-    print("shifting...")
+    print("Shifting...")
     topleft = parallax_shift(topleft, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
     bottomright = parallax_shift(bottomright, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
 
     if (topleft[0] < 0 or topleft[1] < 0 or bottomright[0] >= boardShapeX or bottomright[1] >= boardShapeY):
-        inp = input("Could not see the whole board, center the board or move the camera upwards, Press Q to quit")
+        inp = input("Could not see the whole board, center the board or move the camera upwards, press Q to quit: ")
         if (inp == "q"): return None, None
         return detectBoardLoop(vc)
 

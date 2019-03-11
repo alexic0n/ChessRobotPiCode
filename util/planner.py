@@ -2,6 +2,18 @@
 
 from util.util import *
 from util.castling import *
+import requests
+import time
+
+HOST = "192.168.105.110"
+GRIPPER_GRAB = -400
+GRIPPER_RELEASE = GRIPPER_GRAB+500
+
+def _request(method, endpoint, body=None):
+    response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
+    # print((method, "http://{}:8000{}".format(HOST, endpoint), body))
+    return response.text
+
 
 # move: a 4 length string move
 # board: the FEN notation with * for the state of the board
@@ -81,7 +93,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
         actions += movePiece(moveToCoor, "off the board")
 
     # move the piece normally
-    actions += movePiece(moveFromCoor, moveToMiddleCoor)
+    movePiece(moveFromCoor, moveToMiddleCoor)
     actions.append("move to: off the board")
 
     return actions
@@ -97,12 +109,28 @@ def getSquareMiddle(square, boardDimensions):
     }
 
 def movePiece(moveFrom, moveTo):
-    return [
-        "move to: %s" % moveFrom,
-        "pick up",
-        "move to: %s" % moveTo,
-        "drop"
-    ]
+    # Move to starting position top
+    moveFrom["z"] = 100
+    _request("POST", "/position", body=moveFrom)
+    # Move down
+    moveFrom["z"] = 10
+    _request("POST", "/position", body=moveFrom)
+    # Squeeze the gripper
+    _request("POST", "/gripper", body={"move":GRIPPER_GRAB})
+    # Move up
+    moveFrom["z"] = 100
+    _request("POST", "/position", body=moveFrom)
+    # Move to destination position top
+    moveTo["z"] = 100
+    _request("POST", "/position", body=moveTo)
+    # Move down
+    moveTo["z"] = 10
+    _request("POST", "/position", body=moveTo)
+    # Release
+    _request("POST", "/gripper", body={"move":GRIPPER_RELEASE})
+    # Move back up
+    moveTo["z"] = 100
+    _request("POST", "/position", body=moveTo)
 
 # returns a list of all squares and their middle positions
 def allMiddleSquares(boardDimensions):
