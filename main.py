@@ -16,6 +16,9 @@ from util.util import *
 from util.parallax_shift import *
 from util.planner import *
 
+CAMERA_HEIGHT = 80
+AVG_PIECE_HEIGHT = 6
+
 def userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechEngine):
     #print("The current board state is:\n") #show the user the current board on command line
     #print(board)
@@ -46,6 +49,48 @@ def userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechE
     board.push(move)
     return True
 
+# capture, segment, shift corners, check
+def detectBoardLoop(vc):
+    print("segmenting board...")
+    counter = 0
+    while(counter < 5):
+        ret,img = vc.read()
+        counter += 1
+    ret,emptyboardimage = vc.read()
+    cv.imwrite("EMPTYBOARDIMAGE.jpg",emptyboardimage)
+
+    # topleft, bottomright = segmentation_board(emptyboardimage)
+    template, [topleft, bottomright] = segmentation_board(emptyboardimage, is_empty_board = True)
+
+    # modified
+    # topleft = [158, 55]
+    # bottomright = [476, 379]
+    # emptyboardimage = cv.imread("EMPTYBOARDIMAGE.jpg")
+
+    cropped = emptyboardimage[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    cv.imwrite("cropped.jpg",cropped)
+
+    if (topleft == [0,0] and bottomright == [0,0]):
+        inp = input("Could not find the board! Press Q to quit")
+        if (inp == "q"): return None, None
+        return detectBoardLoop(vc)
+
+    boardShapeY = emptyboardimage.shape[0]
+    boardShapeX = emptyboardimage.shape[1]
+    centerX = boardShapeX / 2
+    centerY = boardShapeY / 2
+
+    print("shifting...")
+    topleft = parallax_shift(topleft, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
+    bottomright = parallax_shift(bottomright, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
+
+    if (topleft[0] < 0 or topleft[1] < 0 or bottomright[0] >= boardShapeX or bottomright[1] >= boardShapeY):
+        inp = input("Could not see the whole board, center the board or move the camera upwards, Press Q to quit")
+        if (inp == "q"): return None, None
+        return detectBoardLoop(vc)
+
+    return topleft, bottomright
+
 def gameplayloop(board):
     wOrB = input("White or black (w/b): ")
     thinkTime = input("How long should I think per turn: ")
@@ -58,22 +103,12 @@ def gameplayloop(board):
     computerSide = ChessMatch(float(thinkTime))
     redblue = coordinateFinder()
 
-    print("segmenting board...")
-    ret,emptyboardimage = vc.read()
-    # topleft, bottomright = segmentation_board(emptyboardimage)
-    template, [topleft, bottomright] = segmentation_board(emptyboardimage)
-    centerX = emptyboardimage.shape[0] / 2
-    centerY = emptyboardimage.shape[1] / 2
-    topleft = parallax_shift(topleft, [centerX, centerY], 100, 6)
-    bottomright = parallax_shift(bottomright, [centerX, centerY], 100, 6)
-    #if topleft[0] < 0: topleft[0] = 0
-    #if topleft[1] < 0: topleft[1] = 0
-    #if bottomright[0] > emptyboardimage.shape[0]: bottomright[0] = emptyboardimage.shape[0] - 1
-    #if bottomright[1] > emptyboardimage.shape[1]: bottomright[1] = emptyboardimage.shape[0] - 1
-    print("tl", topleft)
-    print("xdiff", bottomright[0] - topleft[0])
-    print("br", bottomright, "diff", topleft[0] - bottomright[0])
-    print("ydiff", bottomright[1] - topleft[1])
+    topleft, bottomright = detectBoardLoop(vc)
+
+    if (topleft == None and bottomright == None):
+        computerSide.endgame()
+        exit()
+
     observedBoard = redblue.getBoardState(topleft,bottomright,vc, True)
     if observedBoard != "********/********/********/********/********/********/********/********":
         print("Board is not empty")
@@ -92,6 +127,7 @@ def gameplayloop(board):
             move = str(x)
             boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
             coordinates = redblue.coordinates  # assume middle for all squares
+            print
             boardDimensions = {
                 "left": topleft[0], 
                 "right": bottomright[0], 

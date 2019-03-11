@@ -24,8 +24,19 @@ class coordinateFinder:
             return "imagereadfail"
         now = datetime.datetime.now()
         cv.imwrite("{}.jpg".format(str(now)),img)
+
+        # dimensions = [bottomright[1] - topleft[1], bottomright[0], topleft[0]]
+
+        boardShapeY = img.shape[0]
+        boardShapeX = img.shape[1]
+            
         img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+        # !!! [y, x]
         dimensions = img.shape
+
+        cv.imwrite("{}x2.jpg".format(str(now)),img)
+
+        print(dimensions)
         hsvImg = self.convertHSV(img)
         redCoor, redNames = self.processRed(hsvImg,dimensions)
         blueCoor, blueNames = self.processBlue(hsvImg,dimensions)
@@ -89,8 +100,11 @@ class coordinateFinder:
         gridCoor = []
         for coor in coordinates:
             x,y = coor
+            print(x, y)
             xClass = x/sq_width
             yClass = y/sq_height
+            print("X:", xClass)
+            print("Y:", yClass)
             #gridCoor.insert(0, (letterCoor[math.floor(xClass)],(8-math.floor(yClass))))
             gridCoor.append((math.floor(xClass),math.floor(yClass)))
         return gridCoor
