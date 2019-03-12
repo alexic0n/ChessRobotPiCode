@@ -8,6 +8,8 @@ import time
 HOST = "192.168.105.110"
 GRIPPER_GRAB = -400
 GRIPPER_RELEASE = GRIPPER_GRAB+500
+GRIPPER_OPEN = 700
+GRIPPER_CLOSED = 0
 
 def _request(method, endpoint, body=None):
     response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
@@ -28,7 +30,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
     # if no coordinates given, assume middle for all
     if coordinates == None:
         coordinates = allMiddleSquares(boardDimensions)
-    
+
     assert len(move) == 4
     assert len(board) == 64 + 7
     assert boardDimensions["left"] != None
@@ -103,36 +105,91 @@ def getSquareMiddle(square, boardDimensions):
     squareSizeX = (boardDimensions["right"] - boardDimensions["left"]) / 8
     squareSizeY = (boardDimensions["bottom"] - boardDimensions["top"]) / 8
 
+    # squareSizeX = 100 / 8
+    # squareSizeY = 100 / 8
+
+    # return {
+    #     "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
+    #     "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
+    # }
+
+    # print(boardDimensions, square["x"] * squareSizeX)
+
     return {
-        "x": square["x"] * squareSizeX + squareSizeX / 2,
-        "y": square["y"] * squareSizeY + squareSizeY / 2
+        "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
+        "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
     }
 
+sleeptime = 0
+
 def movePiece(moveFrom, moveTo):
+
     print("Moving from", moveFrom, "to", moveTo)
     
     # Move to starting position top
+    moveFrom["z"] = 0
+    print("moving to position...")
+    _request("POST", "/position", body=moveFrom)
+    print("done.")
+    time.sleep(sleeptime)
+
+    print("opening gripper...")
+    _request("POST", "/gripper", body={"move":GRIPPER_OPEN})
+    print("done.")
+    time.sleep(sleeptime)
+
+    # Move down
+    print("moving down...")
     moveFrom["z"] = 100
     _request("POST", "/position", body=moveFrom)
-    # Move down
-    moveFrom["z"] = 10
-    _request("POST", "/position", body=moveFrom)
-    # Squeeze the gripper
-    _request("POST", "/gripper", body={"move":GRIPPER_GRAB})
+    print("done.")
+    time.sleep(sleeptime)
+
+    # Squeeze the gripper    
+    print("closing gripper...")
+    _request("POST", "/gripper", body={"move":GRIPPER_CLOSED})
+    print("done.")
+    time.sleep(sleeptime)
+    
     # Move up
-    moveFrom["z"] = 100
+    moveFrom["z"] = 0
+    print("moving up...")
     _request("POST", "/position", body=moveFrom)
+    print("done.")
+    time.sleep(sleeptime)
+    
     # Move to destination position top
-    moveTo["z"] = 100
+    moveTo["z"] = 0
+    print("moving to destination...")
     _request("POST", "/position", body=moveTo)
+    print("done.")
+    time.sleep(sleeptime)
+    
     # Move down
-    moveTo["z"] = 10
-    _request("POST", "/position", body=moveTo)
-    # Release
-    _request("POST", "/gripper", body={"move":GRIPPER_RELEASE})
-    # Move back up
     moveTo["z"] = 100
+    print("moving down...")
     _request("POST", "/position", body=moveTo)
+    print("done.")
+    time.sleep(sleeptime)
+    
+    # Release
+    print("opening gripper...")
+    _request("POST", "/gripper", body={"move":GRIPPER_OPEN})
+    print("done.")
+    time.sleep(sleeptime)
+    
+    # Move back up
+    moveTo["z"] = 0
+    print("moving up...")
+    _request("POST", "/position", body=moveTo)
+    print("done.")
+    time.sleep(sleeptime)
+
+    print("closing gripper...")
+    _request("POST", "/gripper", body={"move":GRIPPER_CLOSED})
+    print("done.")
+    time.sleep(sleeptime)
+    print("finished with move.")
 
 # returns a list of all squares and their middle positions
 def allMiddleSquares(boardDimensions):
@@ -143,7 +200,7 @@ def allMiddleSquares(boardDimensions):
         for y in range(8):
             move = coordinatesToSquare({"x": x, "y": y})
             out[move] = {
-                "x": squareSizeX * x + squareSizeX / 2, 
-                "y": squareSizeY * y + squareSizeY / 2
+                "x": boardDimensions["left"] + squareSizeX * x + squareSizeX / 2, 
+                "y": boardDimensions["top"] + squareSizeY * y + squareSizeY / 2
             }
     return out
