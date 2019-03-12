@@ -140,7 +140,7 @@ def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom, grid=6):
 def segmentation_analysis(image):
     # 0: parameters
     grid_number_scan = 6
-    exploid_number = 2
+    sensitive = 32
 
     # 1: convert image to gray and get the size of the image
 
@@ -176,7 +176,7 @@ def segmentation_analysis(image):
 
             k1 = np.math.ceil(2 * k1)
 
-            if k1 > 100:
+            if k1 > sensitive:
                 return [[0, 0], [0, 0]]
 
             peaks_horizontal = []
@@ -213,14 +213,14 @@ def segmentation_analysis(image):
             if len(peaks_horizontal) >= 7:
                 break
 
-            if len(peaks_horizontal) < 7 and k1 >= 64:
+            if len(peaks_horizontal) < 7 and k1 >= sensitive:
                 return [[0, 0], [0, 0]]
 
         while 1:
 
             k2 = np.math.ceil(2 * k2)
 
-            if k2 > 100:
+            if k2 > sensitive:
                 return [[0, 0], [0, 0]]
 
             peaks_vertical = []
@@ -256,7 +256,7 @@ def segmentation_analysis(image):
             if len(peaks_vertical) >= 9:
                 break
 
-            if len(peaks_vertical) < 9 and k2 >= 64:
+            if len(peaks_vertical) < 9 and k2 >= sensitive:
                 return [[0, 0], [0, 0]]
 
         # 5: calculate the possible wide of the grid
