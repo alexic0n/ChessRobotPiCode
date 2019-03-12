@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 def segmentation_board(image_color, template_color=[], previous_coordinate=[]):
     # when there is no template
@@ -169,11 +167,6 @@ def segmentation_analysis(image):
 
     sum_vertical = his_smooth(img_edge.sum(1), 0)
     sum_horizontal = his_smooth(img_edge.sum(0), 0)
-
-    plt.plot(sum_horizontal)
-    plt.show()
-    plt.plot(sum_vertical)
-    plt.show()
 
     k1 = 1
     k2 = 1
