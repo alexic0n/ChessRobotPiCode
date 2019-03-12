@@ -17,6 +17,7 @@ def load_weights():
     model.compile(Adam(lr=.0001), loss='categorical_crossentropy', metrics=['accuracy'])
     model.load_weights(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'model.h5'))
     print("WEIGHTS LOADED")
+    model._make_predict_function()
     return model
 
 # lowercase - black
@@ -34,4 +35,3 @@ def initialize_fen():
     if not os.path.exists("./Board State/previousFEN.txt"):
         with open("./Board State/previousFEN.txt", "w+") as text_file:
             print(fen_notation, file=text_file)
-
