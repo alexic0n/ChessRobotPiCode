@@ -3,6 +3,7 @@ import markdown
 import uuid
 import os
 import bjoern
+import json
 
 # ML classes
 import cv2
@@ -28,41 +29,59 @@ def index():
 
 @app.route('/pieces', methods=['POST'])
 def pieces():
-    name = '{uuid}.jpg'.format(uuid=uuid.uuid4())
+    #name = '{uuid}.jpg'.format(uuid=uuid.uuid4())
+    name = 'image.jpg'
 
     storage_path = os.path.join(app_root, 'images')
 
     image_path = os.path.join(storage_path, name)
 
-    if not (request.files['board'] and request.files['fen'] and request.files['validmoves']):
-        abort('401')
-    
+    if not (request.files['board'] and request.files['fen'] and request.files['validmoves'] and request.files['userResp$        abort('401')
     request.files['board'].save(image_path)
-    
+
+    WorB = request.files['WorB'].read().decode()
+    userResponse = request.files['userResponse'].read().decode()
+    probability_rank = request.files['probability_rank'].read().decode()
+                                                                                                              
     # Controls all other functions
     # Take last image from the webcam
     image = cv2.imread(image_path)
-
-    # Board segmentation
-    (list1, list2) = find_corners(image)
-    image = image[list1[1]:list2[1], list1[0]:list2[0]]
-    cv2.imwrite(image_path, image)
 
     # Crop the board into 64 squares
     crop_squares(image_path)
 
     # Move detection
     ## Detect the most probable origin square
-    (empty_square, piece, new_fen) = detect_empty(model, request.files['fen'].read().decode())
+    (empty_square, piece) = detect_empty(model, request.files['fen'].read().decode(), userResponse, int(probability_ran$
+
     ## Detect the most probable destination square
-    (piece_position, new_fen) = detect_move(model, piece, new_fen, request.files['validmoves'].read().decode())
-    
-    response = '{} moved from {} to {}\n{}'.format(piece, empty_square, piece_position, new_fen)
-    
+    moves = request.files['validmoves'].read().decode()
+
+    moves = moves.replace('[', '')
+    moves = moves.replace(']', '')
+    moves = moves.replace('\'', '')
+    valid_moves = moves.split(', ')
+    valid_moves = [move[2:4] for move in valid_moves if move[0:2] == empty_square]
+    print(valid_moves)
+
+    if valid_moves == []:
+        userResponse = 'true'
+        r = json.dumps({'move':'-1', 'status':'-1', 'userResponse':userResponse, 'probability_rank':probability_rank})
+        return r
+
+    (piece_position) = detect_move(model, piece, valid_moves, WorB)
+
+    move = empty_square + piece_position
+    print(move)
+
+    response = '{} moved from {} to {}'.format(piece, empty_square, piece_position)
+
     print(response)
-    
-    return response
- 
+
+    r = json.dumps({'move':move, 'status':response, 'userResponse':'false', 'probability_rank':probability_rank})
+
+    return r
+
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
