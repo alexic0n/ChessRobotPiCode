@@ -22,7 +22,7 @@ def _request(method, endpoint, body=None):
 # enpassant: the 2 length square string which is en passant
 def plan(move, board, coordinates, boardDimensions, enpassant):
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
-    print("Board dimensions:", boardDimensions)
+    # print("Board dimensions:", boardDimensions)
     # print("Board:", board)
 
     # if no coordinates given, assume middle for all
@@ -94,9 +94,9 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
 
     # move the piece normally
     movePiece(moveFromCoor, moveToMiddleCoor)
-    actions.append("move to: off the board")
+    # actions.append("move to: off the board")
 
-    return actions
+    # return actions
 
 # returns the middle of a square on a board
 def getSquareMiddle(square, boardDimensions):
@@ -109,6 +109,8 @@ def getSquareMiddle(square, boardDimensions):
     }
 
 def movePiece(moveFrom, moveTo):
+    print("Moving from", moveFrom, "to", moveTo)
+    
     # Move to starting position top
     moveFrom["z"] = 100
     _request("POST", "/position", body=moveFrom)
