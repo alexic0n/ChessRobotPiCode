@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-def segmentation_board(image_color, template_color=[], previous_coordinate=[], is_empty_board=False):
+def segmentation_board(image_color, template_color=[], previous_coordinate=[]):
     # when there is no template
     if len(template_color) == 0:
-        output = segmentation_analysis(image_color, is_empty_board)
+        output = segmentation_analysis(image_color)
         template = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
         return template, output
     # when there is template
@@ -44,19 +45,70 @@ def his_smooth(his, step):
     return smooth
 
 
+def check_line_v(image):
+
+    his = image.sum(1)
+
+    if max(his) > his.mean(0) * 2:
+        return True
+    else:
+        return False
+
+
+def check_line_h(image):
+
+    his = image.sum(0)
+
+    if max(his) > his.mean(0) * 2:
+        return True
+    else:
+        return False
+
+
+# help function: check perpendicular lines
+def check_gape(edge, gape, direction):
+
+    if direction == 0:
+        size = len(edge[0])
+    else:
+        size = len(edge)
+
+    output = 0
+
+    number = int(size/gape)
+
+    if direction == 0:
+        for i in range(1, number):
+            if check_line_h(edge[:,int((i-1/3)*gape):int((i+1/3)*gape)]):
+                output += 1
+    else:
+        for i in range(1, number):
+            if check_line_v(edge[int((i-1/3)*gape):int((i+1/3)*gape),:]):
+                output += 1
+
+    print(output)
+
+    return output
+
+
 # help function: figure out the boundary of board from frequency diagram
-def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom, start_point=0):
+def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom):
     length = len(peaks)
+    grid = 6
 
     b1 = b2 = 0
 
-    if length < 8:
+    if length < grid:
         return [-2, -2]
 
-    for i in range(0, length - 8):
+    for i in range(0, length - grid):
 
-        if peaks[i] <= start_point:
+        if peaks[i] <= gape:
             continue
+
+        # if not check_gape(edge[:, peaks[i] - gape:peaks[i]], gape, direction):
+        #     print("reject")
+        #     continue
 
         pointer = i
         count = 0
@@ -82,65 +134,18 @@ def locate_boundary(peaks, bottoms, gape, step_peak, step_bottom, start_point=0)
             if (peaks[j] - peaks[pointer]) > (gape + step_peak):
                 break
 
-            if count == 8:
+            if count == grid:
                 b1 = peaks[i]
                 b2 = peaks[j]
                 break
 
-        if count == 8:
+        if count == grid:
             break
 
     return [b1, b2]
 
 
-# check if the empty board is acceptable
-# return 0: acceptable 1: invalid vertical boundary 2: invalid horizontal boundary 3: invalid for both boundary
-def boundary_check(image, h0, v0, h8, v8):
-    h = h8 - h0
-    v = v8 - v0
-
-    threshold = 60
-
-    h1 = int(h0 + h * 1 / 8)
-    h2 = int(h0 + h * 2 / 8)
-    h3 = int(h0 + h * 3 / 8)
-    h4 = int(h0 + h * 4 / 8)
-    h5 = int(h8 - h * 3 / 8)
-    h6 = int(h8 - h * 2 / 8)
-    h7 = int(h8 - h * 1 / 8)
-
-    v1 = int(v0 + v * 1 / 8)
-    v2 = int(v0 + v * 2 / 8)
-    v3 = int(v0 + v * 3 / 8)
-    v4 = int(v0 + v * 4 / 8)
-    v5 = int(v8 - v * 3 / 8)
-    v6 = int(v8 - v * 2 / 8)
-    v7 = int(v8 - v * 1 / 8)
-
-    hw = (image[v1:v2, h0:h1].mean(0).mean(0) + image[v5:v6, h0:h1].mean(0).mean(0)) / 2
-    hb = (image[v2:v3, h0:h1].mean(0).mean(0) + image[v4:v5, h0:h1].mean(0).mean(0) + image[v6:v7, h0:h1].mean(0).mean(
-        0)) / 3
-    hc = (image[v3:v4, h0:h1].mean(0).mean(0) + image[v7:v8, h0:h1].mean(0).mean(0)) / 2
-
-    vw = (image[v0:v1, h1:h2].mean(0).mean(0) + image[v0:v1, h5:h6].mean(0).mean(0)) / 2
-    vb = (image[v0:v1, h2:h3].mean(0).mean(0) + image[v0:v1, h4:h5].mean(0).mean(0) + image[v0:v1, h6:h7].mean(0).mean(
-        0)) / 3
-    vc = (image[v0:v1, h3:h4].mean(0).mean(0) + image[v0:v1, h7:h8].mean(0).mean(0)) / 2
-
-    if np.absolute((hb - hc).sum(0)) - np.absolute((hw - hc).sum(0)) > threshold:
-        if np.absolute((vb - vc).sum(0)) - np.absolute((vw - vc).sum(0)) > threshold:
-            return 0
-        else:
-            return 1
-    else:
-        if np.absolute((vb - vc).sum(0)) - np.absolute((vw - vc).sum(0)) > threshold:
-            return 2
-        else:
-            return 3
-
-
-# segmentation function: analysis
-def segmentation_analysis(image, is_empty_board=False):
+def segmentation_analysis(image):
     # 1: convert image to gray and get the size of the image
 
     img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -157,23 +162,30 @@ def segmentation_analysis(image, is_empty_board=False):
     img_gray_shift = np.roll(img_gray_shift, d, 1)
     img_edge = np.uint8(np.absolute(img_gray - img_gray_shift))
 
+    cv2.imwrite("Image.jpg", img_edge)
+    cv2.waitKey(0)
+
     # 3: summing the edge and smooth the graph
 
     sum_vertical = his_smooth(img_edge.sum(1), 0)
     sum_horizontal = his_smooth(img_edge.sum(0), 0)
 
+    plt.plot(sum_horizontal)
+    plt.show()
+    plt.plot(sum_vertical)
+    plt.show()
+
     k1 = 1
     k2 = 1
-
-    start_point_vertical = 0
-    start_point_horizontal = 0
 
     while 1:
 
         # 4: get peaks and bottom
         while 1:
 
-            k1 = np.math.ceil(1.5 * k1)
+            print(k1)
+
+            k1 = np.math.ceil(2 * k1)
 
             if k1 > 100:
                 return [[0, 0], [0, 0]]
@@ -209,15 +221,15 @@ def segmentation_analysis(image, is_empty_board=False):
                         low = sum_horizontal[i]
                         bottom = i
 
-            if len(peaks_horizontal) >= 9:
+            if len(peaks_horizontal) >= 7:
                 break
 
-            if len(peaks_horizontal) < 9 and k1 >= 64:
-                return [0, 0, 0, 0]
+            if len(peaks_horizontal) < 7 and k1 >= 64:
+                return [[0, 0], [0, 0]]
 
         while 1:
 
-            k2 = np.math.ceil(1.5 * k2)
+            k2 = np.math.ceil(2 * k2)
 
             if k2 > 100:
                 return [[0, 0], [0, 0]]
@@ -270,10 +282,8 @@ def segmentation_analysis(image, is_empty_board=False):
                 if (peaks_horizontal[j] - peaks_horizontal[i]) > max_wide:
                     break
                 if j != i and (peaks_horizontal[j] - peaks_horizontal[i]) > min_wide:
-                    gap_frequent[peaks_horizontal[j] - peaks_horizontal[i]] = gap_frequent[
-                                                                                  peaks_horizontal[j] -
-                                                                                  peaks_horizontal[
-                                                                                      i]] + 1
+                    gap_frequent[peaks_horizontal[j] - peaks_horizontal[i]] = gap_frequent[peaks_horizontal[j] -
+                                                                                           peaks_horizontal[i]] + 1
 
         for i in range(0, len(peaks_vertical)):
             for j in range(i, len(peaks_vertical)):
@@ -293,37 +303,31 @@ def segmentation_analysis(image, is_empty_board=False):
 
         # 6.1: adjust bottom step and peak step of horizontal
         for peak_step in range(1, int(max_wide / 4) + 1):
-            if (
-                    locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step,
-                                    start_point_horizontal))[0] != 0:
+            if (locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step))[0] != 0:
                 while 1:
                     bottom_step = int(bottom_step * 2 / 3)
-                    output2 = locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step,
-                                              start_point_horizontal)
+                    output2 = locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step)
                     if output2[0] == 0:
                         bottom_step *= 3 / 2
                         break
                 break
 
-        boundary_horizontal = locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step,
-                                              start_point_horizontal)
+        boundary_horizontal = locate_boundary(peaks_horizontal, bottom_horizontal, gape, peak_step, bottom_step)
 
         bottom_step = h * 255
 
         # 6.2 adjust bottom step and peak step of vertical
         for peak_step in range(1, int(max_wide / 4) + 1):
-            if (locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step, start_point_vertical))[0] != 0:
+            if (locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step))[0] != 0:
                 while 1:
                     bottom_step = int(bottom_step * 2 / 3)
-                    output2 = locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step,
-                                              start_point_vertical)
+                    output2 = locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step)
                     if output2[0] == 0:
                         bottom_step *= 3 / 2
                         break
                 break
 
-        boundary_vertical = locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step,
-                                            start_point_vertical)
+        boundary_vertical = locate_boundary(peaks_vertical, bottom_vertical, gape, peak_step, bottom_step)
 
         # 7: check if one of the output is empty, change the parameter and run again
         if boundary_horizontal[0] == 0:
@@ -342,31 +346,69 @@ def segmentation_analysis(image, is_empty_board=False):
             bottom_horizontal.clear()
             continue
 
-        # 8: check if the segmentation is correct
-        if is_empty_board:
-            check_result = boundary_check(image, boundary_horizontal[0], boundary_vertical[0], boundary_horizontal[1],
-                                          boundary_vertical[1])
-
-            print(check_result)
-            if check_result == 1:
-                start_point_vertical = boundary_vertical[0] + 1
-                print("reject")
-                continue
-            if check_result == 2:
-                start_point_horizontal = boundary_horizontal[0] + 1
-                print("reject")
-                continue
-            if check_result == 3:
-                start_point_vertical = boundary_vertical[0] + 1
-                start_point_horizontal = boundary_horizontal[0] + 1
-                print("reject")
-                continue
+        # 8 check out line
 
         # 9: check the ratio of the boundaries
-        if 0.8 > (boundary_horizontal[1] - boundary_horizontal[0])/(boundary_vertical[1] - boundary_vertical[0]) or 1.2 < (boundary_horizontal[1] - boundary_horizontal[0]) / (boundary_vertical[1] - boundary_vertical[0]):
+        if 0.8 > (boundary_horizontal[1] - boundary_horizontal[0]) / (
+                    boundary_vertical[1] - boundary_vertical[0]) or 1.2 < (
+                    boundary_horizontal[1] - boundary_horizontal[0]) / (
+                    boundary_vertical[1] - boundary_vertical[0]):
             return [[0, 0], [0, 0]]
 
         # 10: if there is acceptable output, return the values
+
+        if boundary_horizontal[0] > gape:
+
+            if boundary_horizontal[1] < (h - gape):
+
+                if check_gape(img_edge[boundary_vertical[0]:boundary_vertical[1], boundary_horizontal[0] - gape:boundary_horizontal[0]], gape, 1) \
+                        > check_gape(img_edge[boundary_vertical[0]:boundary_vertical[1], boundary_horizontal[1]:boundary_horizontal[1]+gape], gape, 1):
+                    boundary_horizontal[0] = boundary_horizontal[0] = boundary_horizontal[0] - gape
+                else:
+                    boundary_horizontal[1] = boundary_horizontal[1] + gape
+            else:
+                boundary_horizontal[0] = boundary_horizontal[0] = boundary_horizontal[0] - gape
+        else:
+            boundary_horizontal[1] = boundary_horizontal[1] + gape
+
+        if boundary_vertical[0] > gape:
+            if boundary_vertical[1] < w - gape:
+                if check_gape(img_edge[boundary_vertical[0] - gape:boundary_vertical[0], boundary_horizontal[0]:boundary_horizontal[1]], gape, 0) \
+                        > check_gape(img_edge[boundary_vertical[1]:boundary_vertical[1]+gape, boundary_horizontal[0]:boundary_horizontal[1]], gape, 0):
+                    boundary_vertical[0] = boundary_vertical[0] = boundary_vertical[0] - gape
+                else:
+                    boundary_vertical[1] = boundary_vertical[1] + gape
+            else:
+                boundary_vertical[0] = boundary_vertical[0] = boundary_vertical[0] - gape
+        else:
+            boundary_vertical[1] = boundary_vertical[1] + gape
+
+        if boundary_horizontal[0] > gape:
+
+            if boundary_horizontal[1] < (h - gape):
+
+                if check_gape(img_edge[boundary_vertical[0]:boundary_vertical[1], boundary_horizontal[0] - gape:boundary_horizontal[0]], gape, 1) \
+                        > check_gape(img_edge[boundary_vertical[0]:boundary_vertical[1], boundary_horizontal[1]:boundary_horizontal[1]+gape], gape, 1):
+                    boundary_horizontal[0] = boundary_horizontal[0] = boundary_horizontal[0] - gape
+                else:
+                    boundary_horizontal[1] = boundary_horizontal[1] + gape
+            else:
+                boundary_horizontal[0] = boundary_horizontal[0] = boundary_horizontal[0] - gape
+        else:
+            boundary_horizontal[1] = boundary_horizontal[1] + gape
+
+        if boundary_vertical[0] > gape:
+            if boundary_vertical[1] < w - gape:
+                if check_gape(img_edge[boundary_vertical[0] - gape:boundary_vertical[0], boundary_horizontal[0]:boundary_horizontal[1]], gape, 0) \
+                        > check_gape(img_edge[boundary_vertical[1]:boundary_vertical[1]+gape, boundary_horizontal[0]:boundary_horizontal[1]], gape, 0):
+                    boundary_vertical[0] = boundary_vertical[0] = boundary_vertical[0] - gape
+                else:
+                    boundary_vertical[1] = boundary_vertical[1] + gape
+            else:
+                boundary_vertical[0] = boundary_vertical[0] = boundary_vertical[0] - gape
+        else:
+            boundary_vertical[1] = boundary_vertical[1] + gape
+
         return [[boundary_horizontal[0], boundary_vertical[0]], [boundary_horizontal[1], boundary_vertical[1]]]
 
 
