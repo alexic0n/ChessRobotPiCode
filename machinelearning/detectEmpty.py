@@ -4,7 +4,7 @@ from PIL import Image
 
 app_root = os.path.dirname(os.path.abspath(__file__))
 
-def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
+def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kingside, queenside):
     # Read rows from the FEN notation of the previous board state
     fen_notation = ''
     for ch in previousFEN:
@@ -12,7 +12,7 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
             fen_notation = fen_notation + '*' * (ord(ch) - ord('0'))
         else:
             fen_notation = fen_notation + ch
-    print(fen_notation)
+
     r8, r7, r6, r5, r4, r3, r2, last = fen_notation.split('/')
     r1 = last.split(' ')[0]
     row_num = 8
@@ -38,7 +38,7 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
                 for p in positions:
                     image_names.append(p + '.jpg')
             row_num = row_num - 1
-            
+
     # Crop pixels off the sides of the square (to avoid parts of other squares present in the image)
     pixels = 224
     new_pixels = 215
@@ -46,9 +46,10 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
     top = (pixels - new_pixels) / 2
     right = (pixels + new_pixels) / 2
     bottom = (pixels + new_pixels) / 2
-
+    
     # Add the detected white pieces in the previous board state to the testing data
     data = []
+
     for image_name in image_names:
         image = Image.open(os.path.join(app_root,'images', 'Cropped', '{}').format(image_name))
         image = image.crop((left, top, right, bottom))
@@ -56,12 +57,38 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
         image = np.array(image)
         data.append(image)
     data = np.array(data)
-
+    
     # Generate a list of predictions for the testing data
     predictions = model.predict(data)
     
-     while probability_rank>=0:
-        # Find the image (previously containing a white piece) with highest probability of being empty after the user's$
+    # Check if castling is available
+    if kingside or queenside:
+        threshold = 0.5
+        if (WorB == 'w'):
+            king = [index for index,image in enumerate(image_names) if image == "e1.jpg"][0]
+            bishop_left = [index for index,image in enumerate(image_names) if image == "a1.jpg"][0]
+            bishop_right = [index for index,image in enumerate(image_names) if image == "h1.jpg"][0]
+    
+            if (kingside):
+                if (predictions[king][2] > threshold or predictions[king][5] > threshold) and (predictions[bishop_right][2] > threshold or predictions[bishop_right][5] > threshold$
+                    return ("e1h1", "KR")
+            if (queenside):
+                if (predictions[bishop_left][2] > threshold or predictions[bishop_left][5] > threshold) and (predictions[king][2] > threshold or predictions[king][5] > threshold):
+                    return ("e1a1", "RK")
+        else:
+            king = [index for index,image in enumerate(image_names) if image == "e8.jpg"][0]
+            bishop_left = [index for index,image in enumerate(image_names) if image == "a8.jpg"][0]
+            bishop_right = [index for index,image in enumerate(image_names) if image == "h8.jpg"][0]
+    
+            if (kingside):
+                if (predictions[king][2] > threshold or predictions[king][5] > threshold) and (predictions[bishop_right][2] > threshold or predictions[bishop_right][5] > threshold$
+                    return ("e8h8", "kr")
+            if (queenside):
+                if (predictions[bishop_left][2] > threshold or predictions[bishop_left][5] > threshold) and (predictions[king][2] > threshold or predictions[king][5] > threshold):
+                    return ("e8a8", "rk")
+
+    while probability_rank>=0:
+        # Find the image (previously containing a white piece) with highest probability of being empty after the user's move
         max_indices = predictions.argmax(axis=0)
         max_index_black = max_indices[2]
         max_index_wooden = max_indices[5]
@@ -79,3 +106,6 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB):
     piece = row[column]
 
     return (empty_position, piece)
+
+    
+    
