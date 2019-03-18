@@ -53,6 +53,11 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
     userResponse = 'false'
     probability_rank = '0'
     currentLegalMoves = getLegalMoves(board)
+    originKnown = False
+    maxAskedCount = 1
+    askedCount = 0
+    userResponseCastling = 'false'
+    
     while (True):
         print('Making request to Tardis.')
         r = requests.post("http://www.checkmate.tardis.ed.ac.uk/pieces", files={
@@ -60,6 +65,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             'fen': board.fen(),
             'validmoves': str(currentLegalMoves),
             'userResponse': userResponse,
+            'userResponseCastling': userResponseCastling,
             'probability_rank': probability_rank,
             'WorB': WorB
         })
@@ -68,64 +74,108 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
 
         userResponse = data['userResponse']
         if userResponse == 'true':
-            TextToSpeechEngine.say('Are you sure that you made a legal move?')
-            TextToSpeechEngine.runAndWait()
-            is_legal = input('Are you sure that you made a legal move? y or n\n')
-            if is_legal == 'y':
-                    probability_rank = str(int(data['probability_rank']) + 1)
-            else:
-                TextToSpeechEngine.say("Please make a new move.")
+            if (askedCount < maxAskedCount):
+                TextToSpeechEngine.say('Are you sure that you made a legal move?')
                 TextToSpeechEngine.runAndWait()
-                x = input("\nPlease make a new move.")
-
-                # Capture image
-                counter = 0
-                while(counter < 5):
-                    ret,img = vc.read()
-                    counter += 1
-                if img is None:
-                    return "imagereadfail"
-                cv.imwrite("images/image.jpg",img)
-
-                # Take last image from the webcam
-                img_path = "images/image.jpg"
-                image = cv.imread(img_path)
-
-                image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-
-                cv.imwrite(img_path, image)
-
-                currentLegalMoves = getLegalMoves(board)
+                is_legal = input('Are you sure that you made a legal move? y or n\n')
+                
+                askedCount = askedCount + 1
+                
+                if is_legal == 'y':
+                        probability_rank = str(int(data['probability_rank']) + 1)
+                else:
+                    TextToSpeechEngine.say("Please make a new move.")
+                    TextToSpeechEngine.runAndWait()
+                    x = input("\nPlease make a new move.")
+                    originKnown = False
+                    userResponseCastling = 'false'
+                    askedCount = 0
+    
+                    # Capture image
+                    counter = 0
+                    while(counter < 5):
+                        ret,img = vc.read()
+                        counter += 1
+                    if img is None:
+                        return "imagereadfail"
+                    cv.imwrite("images/image.jpg",img)
+    
+                    # Take last image from the webcam
+                    img_path = "images/image.jpg"
+                    image = cv.imread(img_path)
+    
+                    image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    
+                    cv.imwrite(img_path, image)
+    
+                    currentLegalMoves = getLegalMoves(board)
+            else:
+                probability_rank = str(int(data['probability_rank']) + 1)
+                
         else:
             data = r.json()
-            TextToSpeechEngine.say(data['status'] + ". Is this correct?")
-            TextToSpeechEngine.runAndWait()
-            is_correct = input(data['status'] + ". Is this correct? y or n \n")
+            
+            if (len(data['move']) == 8):
+                if (data['move'][2] == "a"):
+                    # Queenside castling
+                    TextToSpeechEngine.say("You have made queenside castling. Is this correct?")
+                    TextToSpeechEngine.runAndWait()
+                    is_correct = input("You have made queenside castling. Is this correct? y or n \n")
+                    if (is_correct == 'n'):
+                        userResponseCastling = 'true' 
+                    
+                if (data['move'][2] == "h"):
+                    # Kingside castling
+                    TextToSpeechEngine.say("You have made kingside castling. Is this correct?")
+                    TextToSpeechEngine.runAndWait()
+                    is_correct = input("You have made kingside castling. Is this correct? y or n \n")
+                    if (is_correct == 'n'):
+                        userResponseCastling = 'true'
+        
+            else:     
+                TextToSpeechEngine.say(data['status'] + ". Is this correct?")
+                TextToSpeechEngine.runAndWait()
+                is_correct = input(data['status'] + ". Is this correct? y or n \n")
+            
             if is_correct == 'y':
-                move_str = data['move']
+                if (len(data['move']) == 8):
+                    move_str = data['move'][0:4]  
+                else:    
+                    move_str = data['move']
+                
+                print(move_str)
                 move = chess.Move.from_uci(move_str)
                 board.push(move)
                 computerSide.userTurn(move)
                 return True
             else:
                 # NEXT PROBABLE MOVE
-                status_list = data['status'].split(" ")
-                piece = status_list[0]
-                origin = status_list[3]
-                TextToSpeechEngine.say("Have you moved a {} from {}?".format(piece, origin))
-                TextToSpeechEngine.runAndWait()
-                is_origin = input("Have you moved a {} from {}? y or n \n".format(piece, origin))
-         
-                if (is_origin == 'y'):
-                    currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
+                if not originKnown: 
+                    status_list = data['status'].split(" ")
+                    piece = status_list[0]
+                    origin = status_list[3]
+                    if not piece == 'None':  
+                        TextToSpeechEngine.say("Have you moved a {} from {}?".format(piece, origin))
+                        TextToSpeechEngine.runAndWait()
+                        is_origin = input("Have you moved a {} from {}? y or n \n".format(piece, origin))
+                        if (is_origin == 'y'):
+                            originKnown = True
+                            currentLegalMoves = [move for move in currentLegalMoves if not move == data['move'] and move[0:2] == origin]
+                        else:
+                            probability_rank = str(int(data['probability_rank']) + 1)
+                            currentLegalMoves = [move for move in currentLegalMoves if not move[0:2] == origin]
                 else:
-                    probability_rank = str(int(data['probability_rank']) + 1)
+                    currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
+
 
         if len(currentLegalMoves) == 0:
             TextToSpeechEngine.say("Your move is invalid. Please make a new move.")
             TextToSpeechEngine.runAndWait()
             x = input("\nYour move is invalid. Please make a new move.")
-
+            
+            originKnown = False
+            userResponseCastling = 'false'
+            askedCount = 0
             # Capture image
             counter = 0
             while(counter < 5):
