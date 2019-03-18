@@ -203,7 +203,6 @@ def allMiddleSquares(boardDimensions):
                 "y": boardDimensions["left"] + squareSizeX * x + squareSizeX / 2, 
                 "x": boardDimensions["top"] + squareSizeY * y + squareSizeY / 2
             }
-            print(x, y, move, out[move])
     return out
 
 def planSimple(position):

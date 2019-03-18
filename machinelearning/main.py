@@ -15,6 +15,8 @@ from util.util import *
 from util.planner import *
 import requests
 import json
+from Crop import crop_squares
+
 
 def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine, vc): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
@@ -47,17 +49,52 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
     # Take last image from the webcam
     img_path = "images/image.jpg"
     image = cv.imread(img_path)
-
+    #img = np.double(image)
+    #brighten = img + 50
+    #image = np.uint8(brighten)
     image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-
     cv.imwrite(img_path, image)
+    
     userResponse = 'false'
     probability_rank = '0'
     currentLegalMoves = getLegalMoves(board)
     originKnown = False
     maxAskedCount = 1
     askedCount = 0
-    userResponseCastling = 'false'
+    kingside = 'false'
+    queenside = 'false'
+    
+    # Check if castling move is available
+    fen = board.fen()
+    castling = fen.split(" ")[2]
+    if (WorB == 'w'):
+        castling_moves = []
+        lastRow = fen.split(" ")[0].split("/")[7]
+        if "K" in castling:
+            if lastRow[-2] == "2":
+                kingside = 'true'
+                castling_moves.append("f1")
+        if "Q" in castling:
+            if lastRow[1] == "3":
+                queenside = 'true'
+                castling_moves.append("c1")
+        if queenside or kingside:
+            castling_moves.append("e1")
+
+    else:
+        castling_moves = []
+        firstRow = fen.split(" ")[0].split("/")[0]
+        if "k" in castling:
+            if firstRow[-2] == "2":
+                kingside = 'true'
+                castling_moves.append("f8")
+        if "q" in castling:
+            if firstRow[1] == "3": 
+                queenside = 'true'
+                castling_moves.append("c8")
+        if queenside or kingside:
+            castling_moves.append("e8")
+
     
     while (True):
         print('Making request to Tardis.')
@@ -66,7 +103,8 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             'fen': board.fen(),
             'validmoves': str(currentLegalMoves),
             'userResponse': userResponse,
-            'userResponseCastling': userResponseCastling,
+            'kingside': kingside,
+            'queenside': queenside,
             'probability_rank': probability_rank,
             'WorB': WorB
         })
@@ -89,7 +127,6 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     TextToSpeechEngine.runAndWait()
                     x = input("\nPlease make a new move.")
                     originKnown = False
-                    userResponseCastling = 'false'
                     askedCount = 0
     
                     # Capture image
@@ -116,14 +153,14 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
         else:
             data = r.json()
             
-            if (len(data['move']) == 8):
+            if (len(data['move']) == 5):
                 if (data['move'][2] == "a"):
                     # Queenside castling
                     TextToSpeechEngine.say("You have made queenside castling. Is this correct?")
                     TextToSpeechEngine.runAndWait()
                     is_correct = input("You have made queenside castling. Is this correct? y or n \n")
                     if (is_correct == 'n'):
-                        userResponseCastling = 'true' 
+                        queenside = 'false' 
                     
                 if (data['move'][2] == "h"):
                     # Kingside castling
@@ -131,7 +168,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     TextToSpeechEngine.runAndWait()
                     is_correct = input("You have made kingside castling. Is this correct? y or n \n")
                     if (is_correct == 'n'):
-                        userResponseCastling = 'true'
+                        kingside = 'false'
         
             else:     
                 TextToSpeechEngine.say(data['status'] + ". Is this correct?")
@@ -139,7 +176,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                 is_correct = input(data['status'] + ". Is this correct? y or n \n")
             
             if is_correct == 'y':
-                if (len(data['move']) == 8):
+                if (len(data['move']) == 5):
                     move_str = data['move'][0:4]  
                 else:    
                     move_str = data['move']
@@ -155,7 +192,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     status_list = data['status'].split(" ")
                     piece = status_list[0]
                     origin = status_list[3]
-                    if not piece == 'None':  
+                    if not (len(data['move']) == 5):  
                         TextToSpeechEngine.say("Have you moved a {} from {}?".format(piece, origin))
                         TextToSpeechEngine.runAndWait()
                         is_origin = input("Have you moved a {} from {}? y or n \n".format(piece, origin))
@@ -169,13 +206,12 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
 
 
-        if len(currentLegalMoves) == 0:
+        if (len(currentLegalMoves) == 0 and kingside == 'false' and queenside == 'false'):
             TextToSpeechEngine.say("Your move is invalid. Please make a new move.")
             TextToSpeechEngine.runAndWait()
             x = input("\nYour move is invalid. Please make a new move.")
             
             originKnown = False
-            userResponseCastling = 'false'
             askedCount = 0
             # Capture image
             counter = 0
@@ -241,7 +277,7 @@ def gameplayloop(board):
         while(True):
             x = computerSide.aiTurn() #obtain the move the ai would make
             board.push(x)
-            planSimple(str(x))
+            #planSimple(str(x))
             print("AI makes move: {}.".format(x),"\n")
             print(board)
             stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', TextToSpeechEngine, vc)
@@ -258,7 +294,7 @@ def gameplayloop(board):
                 break
             x = computerSide.aiTurn()
             board.push(x)
-            planSimple(str(x))
+            #planSimple(str(x))
             print("AI makes move: {}.".format(x), "\n")
             print(board)
 
