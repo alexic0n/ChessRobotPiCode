@@ -51,10 +51,10 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
     moveFrom = squareToCoordinates(move[0:2])
     moveTo   = squareToCoordinates(move[2:4])
     moveFromCoor = coordinates[move[0:2]]
-    moveToCoor   = coordinates[move[2:4]] if move[2:4] in coordinates.keys() else None
+    moveToCoor   = coordinates[move[2:4]]
 
     # the middle of the square where the piece will move to
-    moveToMiddleCoor = getSquareMiddle(moveTo, boardDimensions)
+    # moveToMiddleCoor = getSquareMiddle(moveTo, boardDimensions)
 
     actions = []
 
@@ -95,7 +95,7 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
         actions += movePiece(moveToCoor, "off the board")
 
     # move the piece normally
-    movePiece(moveFromCoor, moveToMiddleCoor)
+    movePiece(moveFromCoor, moveToCoor)
     # actions.append("move to: off the board")
 
     # return actions
@@ -200,7 +200,18 @@ def allMiddleSquares(boardDimensions):
         for y in range(8):
             move = coordinatesToSquare({"x": x, "y": y})
             out[move] = {
-                "x": boardDimensions["left"] + squareSizeX * x + squareSizeX / 2, 
-                "y": boardDimensions["top"] + squareSizeY * y + squareSizeY / 2
+                "y": boardDimensions["left"] + squareSizeX * x + squareSizeX / 2, 
+                "x": boardDimensions["top"] + squareSizeY * y + squareSizeY / 2
             }
+            print(x, y, move, out[move])
     return out
+
+def planSimple(position):
+    return plan(
+        position,
+        "********/********/********/********/********/********/********/********",
+        None,
+        {"left": -6.25, "right": 106.25, "top": 106.25, "bottom": -6.25},
+        "-"
+    )
+

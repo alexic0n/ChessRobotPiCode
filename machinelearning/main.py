@@ -12,6 +12,7 @@ sys.path.append("../")
 from classes.aiInterface import *
 from classes.segmentation import *
 from util.util import *
+from util.planner import *
 import requests
 import json
 
@@ -240,6 +241,7 @@ def gameplayloop(board):
         while(True):
             x = computerSide.aiTurn() #obtain the move the ai would make
             board.push(x)
+            planSimple(str(x))
             print("AI makes move: {}.".format(x),"\n")
             print(board)
             stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', TextToSpeechEngine, vc)
@@ -256,6 +258,7 @@ def gameplayloop(board):
                 break
             x = computerSide.aiTurn()
             board.push(x)
+            planSimple(str(x))
             print("AI makes move: {}.".format(x), "\n")
             print(board)
 
