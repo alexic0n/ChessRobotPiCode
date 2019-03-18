@@ -2,6 +2,6 @@
 .vscode
 *.h5
 old
-machine learning/Logitech Webcam/*.jpg
-machine learning/Logitech Webcam/Cropped/*.jpg
-machine learning/Board State/previousFEN.txt
+machinelearning/images/*.jpg
+machinelearning/images/Cropped/*.jpg
+machinelearning/Board State/previousFEN.txt

@@ -11,7 +11,7 @@ class ChessMatch:
     def __init__(self,thinkTime):
         self.limit = chess.engine.Limit(time = thinkTime)
         self.board = chess.Board()
-        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/ChessBot/util/stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/MachineLearning/pi/machinelearning/StockfishArm7/stockfish")
 
     def endgame(self):
         self.engine.quit()
@@ -21,15 +21,8 @@ class ChessMatch:
         self.board.push(a)
         return a
 
-    def userTurn(self, updatedBoardFen):
-        legalMoves = self.board.legal_moves
-        for a in legalMoves:
+    def userTurn(self, a):
             self.board.push(a)
-            if(updatedBoardFen == self.convertBW(self.board.fen())):
-                print("\nMatch found, now my turn to make a move..")
-                return True, a
-            self.board.pop()
-        return False, False
 
     def convertBW(self, toConv):
         boardState = toConv.split(' ')[0]

@@ -1,8 +1,0 @@
-tensorflow==1.5.*
-keras
-glob3
-opencv-python
-numpy
-pillow
-falcon
-bjoern
