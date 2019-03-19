@@ -4,7 +4,7 @@ from PIL import Image
 
 app_root = os.path.dirname(os.path.abspath(__file__))
 
-def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kingside, queenside):
+def detect_empty(model, previousFEN, valid_origins, userResponse, probability_rank, WorB):
     # Read rows from the FEN notation of the previous board state
     fen_notation = ''
     for ch in previousFEN:
@@ -18,26 +18,11 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kings
     row_num = 8
     image_names = []
     row_list = [r8, r7, r6, r5, r4, r3, r2, r1]
-    if WorB == 'w':
-        # Find all white pieces in the previous board state
-        for row in row_list:
-            indices_uppercase = [i for i, c in enumerate(row) if c.isupper()]
-            letters = [chr(num + ord('a')) for num in indices_uppercase]
-            if len(letters) != 0:
-                positions = [letter + str(row_num) for letter in letters]
-                for p in positions:
-                    image_names.append(p + '.jpg')
-            row_num = row_num - 1
-    else:
-        # Find all black pieces in the previous board state
-        for row in row_list:
-            indices_lowercase = [i for i, c in enumerate(row) if c.islower()]
-            letters = [chr(num + ord('a')) for num in indices_lowercase]
-            if len(letters) != 0:
-                positions = [letter + str(row_num) for letter in letters]
-                for p in positions:
-                    image_names.append(p + '.jpg')
-            row_num = row_num - 1
+
+    # Create a list with vaild origin image names
+    image_names = []
+    for square in valid_origins:
+        image_names.append(square + '.jpg')
 
     # Crop pixels off the sides of the square (to avoid parts of other squares present in the image)
     pixels = 224
@@ -46,7 +31,7 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kings
     top = (pixels - new_pixels) / 2
     right = (pixels + new_pixels) / 2
     bottom = (pixels + new_pixels) / 2
-    
+
     # Add the detected white pieces in the previous board state to the testing data
     data = []
 
@@ -60,34 +45,8 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kings
     
     # Generate a list of predictions for the testing data
     predictions = model.predict(data)
-    
-    # Check if castling is available
-    if kingside or queenside:
-        threshold = 0.5
-        if (WorB == 'w'):
-            king = [index for index,image in enumerate(image_names) if image == "e1.jpg"][0]
-            bishop_left = [index for index,image in enumerate(image_names) if image == "a1.jpg"][0]
-            bishop_right = [index for index,image in enumerate(image_names) if image == "h1.jpg"][0]
-    
-            if (kingside):
-                if (predictions[king][2] > threshold or predictions[king][5] > threshold) and (predictions[bishop_right][2] > threshold or predictions[bishop_right][5] > threshold$
-                    return ("e1h1", "KR")
-            if (queenside):
-                if (predictions[bishop_left][2] > threshold or predictions[bishop_left][5] > threshold) and (predictions[king][2] > threshold or predictions[king][5] > threshold):
-                    return ("e1a1", "RK")
-        else:
-            king = [index for index,image in enumerate(image_names) if image == "e8.jpg"][0]
-            bishop_left = [index for index,image in enumerate(image_names) if image == "a8.jpg"][0]
-            bishop_right = [index for index,image in enumerate(image_names) if image == "h8.jpg"][0]
-    
-            if (kingside):
-                if (predictions[king][2] > threshold or predictions[king][5] > threshold) and (predictions[bishop_right][2] > threshold or predictions[bishop_right][5] > threshold$
-                    return ("e8h8", "kr")
-            if (queenside):
-                if (predictions[bishop_left][2] > threshold or predictions[bishop_left][5] > threshold) and (predictions[king][2] > threshold or predictions[king][5] > threshold):
-                    return ("e8a8", "rk")
 
-    while probability_rank>=0:
+while probability_rank>=0:
         # Find the image (previously containing a white piece) with highest probability of being empty after the user's move
         max_indices = predictions.argmax(axis=0)
         max_index_black = max_indices[2]
@@ -106,6 +65,3 @@ def detect_empty(model, previousFEN, userResponse, probability_rank, WorB, kings
     piece = row[column]
 
     return (empty_position, piece)
-
-    
-    
