@@ -30,56 +30,84 @@ def detect_move(model, piece, validmoves, WorB, kingside, queenside):
         image = np.array(image)
         data.append(image)
 
-    castling_image_names = ["f1.jpg", "g1.jpg", "c1.jpg", "d1.jpg", "f8.jpg", "g8.jpg", "c8.jpg", "d8.jpg"]
+    castling_image_names = ["g1.jpg", "c1.jpg","g8.jpg", "c8.jpg"]
     for image_name in castling_image_names:
         image = Image.open(os.path.join(app_root, 'images', 'Cropped', image_name))
         image = image.crop((left, top, right, bottom))
         image = image.resize((pixels, pixels), Image.ANTIALIAS)
         image = np.array(image)
 
-        if (image_name == "f1.jpg" or image_name == "g1.jpg"):
+        if (image_name == "g1.jpg"):
             data_white_kingside.append(image) 
-        if (image_name == "c1.jpg" or image_name == "d1.jpg"):
+        if (image_name == "c1.jpg"):
             data_white_queenside.append(image) 
-        if (image_name == "f8.jpg" or image_name == "g8.jpg"):
+        if (image_name == "g8.jpg"):
             data_black_kingside.append(image) 
-        if (image_name == "c8.jpg" or image_name == "d8.jpg"):
+        if (image_name == "c8.jpg"):
             data_black_queenside.append(image) 
-            
+
     data = np.array(data)
     data_white_kingside = np.array(data_white_kingside)
     data_white_queenside = np.array(data_white_queenside)
     data_black_kingside = np.array(data_black_kingside)
     data_black_queenside = np.array(data_black_queenside)
-
+    
     threshold = 0.5
     if WorB == 'w':
         first = 0
         second = 3
 
         # Check if castling move has been made
-        if (kingside):
-            castling_predictions = model.predict(data_white_kingside)
-            if (castling_predictions[0][first] > threshold or castling_predictions[0][second] > threshold) and (castling_predictions[1][first] > threshold or castling_predictions[$
-               return "f1g1"
-        if (queenside):
-            castling_predictions = model.predict(data_white_queenside)
-            if (castling_predictions[0][first] > threshold or castling_predictions[0][second] > threshold) and (castling_predictions[1][first] > threshold or castling_predictions[$
-               return "c1d1"
+        if (kingside == 'true' and queenside == 'true'):
+            castling_predictions_kingside = model.predict(data_white_kingside)
+            castling_predictions_queenside = model.predict(data_white_queenside)
+            probability_kingside = max([castling_predictions_kingside[0][0], castling_predictions_kingside[0][1], castling_predictions_kingside[0][3], castling_predictions_kingside[0][4]])
+            probability_queenside = max([castling_predictions_queenside[0][0], castling_predictions_queenside[0][1], castling_predictions_queenside[0][3], castling_predictions_queenside[0][4]])
+            max_probability = max(probability_kingside, probability_queenside)
+            if (max_probability > threshold):
+               if (max_probability == probability_kingside):
+                   return "h1*"
+               else:
+                   return "a1*"
+
+        if (kingside == 'true'):
+            castling_predictions_kingside = model.predict(data_white_kingside)
+            probability_kingside = max([castling_predictions_kingside[0][0], castling_predictions_kingside[0][1], castling_predictions_kingside[0][3], castling_predictions_kingside[0][4]])
+            if (probability_kingside > threshold):
+               return "h1*"
+        if (queenside == 'true'):
+            castling_predictions_queenside = model.predict(data_white_queenside)
+            probability_queenside = max([castling_predictions_queenside[0][0], castling_predictions_queenside[0][1], castling_predictions_queenside[0][3], castling_predictions_queenside[0][4]])
+            if (probability_queenside > threshold):
+               return "a1*"
     else:
         first = 1
         second = 4
 
         # Check if castling move has been made
-        if (kingside):
-            castling_predictions = model.predict(data_black_kingside)
-            if (castling_predictions[0][first] > threshold or castling_predictions[0][second] > threshold) and (castling_predictions[1][first] > threshold or castling_predictions[$
-               return "f8g8"
-        if (queenside):
-            castling_predictions = model.predict(data_black_queenside)
-            if (castling_predictions[0][first] > threshold or castling_predictions[0][second] > threshold) and (castling_predictions[1][first] > threshold or castling_predictions[$
-               return "c8d8"
-   
+        if (kingside == 'true' and queenside == 'true'):
+            castling_predictions_kingside = model.predict(data_black_kingside)
+            castling_predictions_queenside = model.predict(data_black_queenside)
+            probability_kingside = max([castling_predictions_kingside[0][0], castling_predictions_kingside[0][1], castling_predictions_kingside[0][3], castling_predictions_kingside[0][4]])
+            probability_queenside = max([castling_predictions_queenside[0][0], castling_predictions_queenside[0][1], castling_predictions_queenside[0][3], castling_predictions_queenside[0][4]])
+            max_probability = max(probability_kingside, probability_queenside)
+            if (max_probability > threshold):
+               if (max_probability == probability_kingside):
+                   return "h8*"
+               else:
+                   return "a8*"
+
+        if (kingside == 'true'):
+            castling_predictions_kingside = model.predict(data_black_kingside)
+            probability_kingside = max([castling_predictions_kingside[0][0], castling_predictions_kingside[0][1], castling_predictions_kingside[0][3], castling_predictions_kingside[0][4]])
+            if (probability_kingside > threshold):
+               return "h8*"
+        if (queenside == 'true'):
+            castling_predictions_queenside = model.predict(data_black_queenside)
+            probability_queenside = max([castling_predictions_queenside[0][0], castling_predictions_queenside[0][1], castling_predictions_queenside[0][3], castling_predictions_queenside[0][4]])
+            if (probability_queenside > threshold):
+               return "a8*"
+        
     # Generate a list of predictions for the testing data
     predictions = model.predict(data) 
 
@@ -94,4 +122,3 @@ def detect_move(model, piece, validmoves, WorB, kingside, queenside):
     piece_position = image_names[max_index][0:2]
 
     return piece_position
-
