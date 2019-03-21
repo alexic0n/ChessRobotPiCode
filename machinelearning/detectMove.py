@@ -51,7 +51,7 @@ def detect_move(model, piece, validmoves, WorB, kingside, queenside):
     data_white_queenside = np.array(data_white_queenside)
     data_black_kingside = np.array(data_black_kingside)
     data_black_queenside = np.array(data_black_queenside)
-    
+
     threshold = 0.5
     if WorB == 'w':
         first = 0
