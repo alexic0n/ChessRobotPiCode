@@ -7,6 +7,7 @@ import json
 
 # ML classes
 import cv2
+import numpy as np
 import glob
 from BoardDetection import segmentation_board as find_corners
 from Crop import crop_squares
@@ -15,6 +16,7 @@ from Initialize import initialize_fen
 from detectEmpty import detect_empty
 from detectMove import detect_move
 from model import model
+from PIL import Image
 
 # Flask instances are callable WSGI apps, initialise the app
 app = Flask(__name__)
@@ -35,22 +37,70 @@ def pieces():
 
     image_path = os.path.join(storage_path, name)
 
-    if not (request.files['board'] and request.files['fen'] and request.files['validmoves'] and request.files['userResponse'] and request.files['kingside'] and request.files['queenside'] and request.files['prob$
+    if not (request.files['board'] and request.files['fen'] and request.files['validmoves']  and request.files['kingside'] and request.files['queenside'] and request.files['probability_rank'] and request.files[$
         abort('401')
     request.files['board'].save(image_path)
 
     WorB = request.files['WorB'].read().decode()
-    userResponse = request.files['userResponse'].read().decode()
     kingside = request.files['kingside'].read().decode()
     queenside = request.files['queenside'].read().decode()
     probability_rank = request.files['probability_rank'].read().decode()
     fen = request.files['fen'].read().decode()
     moves = request.files['validmoves'].read().decode()
+    rotateImage = request.files['rotateImage'].read().decode()
+    
+    if (request.files['firstImage'].read().decode() == 'true'):
+        # Take last image from the webcam
+        image = cv2.imread(image_path)
 
+        # Crop the board into 64 squares
+        crop_squares(image_path)
+
+        # Crop pixels off the sides of the square (to avoid parts of other squares present in the image)
+        pixels = 224
+        new_pixels = 215
+        left = (pixels - new_pixels) / 2
+        top = (pixels - new_pixels) / 2
+        right = (pixels + new_pixels) / 2
+        bottom = (pixels + new_pixels) / 2
+  
+        data = []
+
+        for image_name in ['a1', 'h8']:
+            image = Image.open(os.path.join(app_root, 'images', 'Cropped', ('{}.jpg').format(image_name)))
+            image = image.crop((left, top, right, bottom))
+            image = image.resize((pixels, pixels), Image.ANTIALIAS)
+            image = np.array(image)
+            data.append(image)
+        data = np.array(data)
+
+        predictions = model.predict(data)
+        
+        # Probabilities of a1 and h8 containing white or black piece
+        a1_white = max(predictions[0][0], predictions[0][3]) 
+        a1_black = max(predictions[0][1], predictions[0][4])
+        h8_white = max(predictions[1][0], predictions[1][3])
+        h8_black = max(predictions[1][1], predictions[1][4])
+
+        if (a1_black * h8_white > a1_white * h8_black):
+            rotateImage = 'true'
+            
     # Controls all other functions
     # Take last image from the webcam
     image = cv2.imread(image_path)
-    
+
+    # Rotate image if necessary
+    if (rotateImage == 'true'):
+         (h, w) = image.shape[:2]
+         # Calculate the center of the image
+         center = (w / 2, h / 2)
+
+         M = cv2.getRotationMatrix2D(center, 180, 1.0)
+         image = cv2.warpAffine(image, M, (w, h))  
+
+         # Save the rotated image
+         cv2.imwrite(image_path, image)
+
     # Crop the board into 64 squares
     crop_squares(image_path)
 
@@ -62,15 +112,10 @@ def pieces():
     valid_moves = moves.split(', ')
     valid_origins = [move[0:2] for move in valid_moves]
 
-    (empty_square, piece) = detect_empty(model, fen, valid_origins, userResponse, int(probability_rank), WorB)
-    
+    (empty_square, piece) = detect_empty(model, fen, valid_origins, int(probability_rank), WorB)
+
     ## Detect the most probable destination square
     valid_destinations = [move[2:4] for move in valid_moves if move[0:2] == empty_square]
-    
-    if valid_destinations == [] and not(kingside == True or queenside == True):
-        userResponse = 'true'
-        r = json.dumps({'move':'-1', 'status':'-1', 'userResponse':userResponse, 'probability_rank':probability_rank})
-        return r
 
     (piece_position) = detect_move(model, piece, valid_destinations, WorB, kingside, queenside)
 
@@ -91,11 +136,13 @@ def pieces():
     response = '{} moved from {} to {}'.format(piece_dict.get(piece.lower()), empty_square, piece_position)
     
     print(response)
- 
-    r = json.dumps({'move':move, 'status':response, 'userResponse':'false', 'probability_rank':probability_rank})
+    
+    r = json.dumps({'move':move, 'status':response, 'probability_rank':probability_rank, 'rotateImage': rotateImage})
     
     return r
  
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
+
+
