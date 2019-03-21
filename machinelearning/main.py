@@ -1,6 +1,3 @@
-# import files like this
-# from classes.boardState import *
-# from classes.move import *
 import sys
 sys.path.append("../util/pythonchess")
 import chess
