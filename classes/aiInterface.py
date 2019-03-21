@@ -8,8 +8,8 @@ import chess.engine
 
 class ChessMatch:
 
-    def __init__(self,thinkTime):
-        self.limit = chess.engine.Limit(time = thinkTime)
+    def __init__(self, depth):
+        self.limit = chess.engine.Limit(depth = depth)
         self.board = chess.Board()
         self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/MachineLearning/pi/machinelearning/StockfishArm7/stockfish")
 
@@ -18,7 +18,8 @@ class ChessMatch:
 
     def aiTurn(self):
         a = self.engine.play(self.board,self.limit).move
-        self.board.push(a)
+        if not (a==None):
+            self.board.push(a)
         return a
 
     def userTurn(self, a):
