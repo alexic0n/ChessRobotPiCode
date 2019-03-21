@@ -4,7 +4,7 @@ from PIL import Image
 
 app_root = os.path.dirname(os.path.abspath(__file__))
 
-def detect_empty(model, previousFEN, valid_origins, userResponse, probability_rank, WorB):
+def detect_empty(model, previousFEN, valid_origins, probability_rank, WorB):
     # Read rows from the FEN notation of the previous board state
     fen_notation = ''
     for ch in previousFEN:
@@ -46,7 +46,7 @@ def detect_empty(model, previousFEN, valid_origins, userResponse, probability_ra
     # Generate a list of predictions for the testing data
     predictions = model.predict(data)
 
-while probability_rank>=0:
+    while probability_rank>=0:
         # Find the image (previously containing a white piece) with highest probability of being empty after the user's move
         max_indices = predictions.argmax(axis=0)
         max_index_black = max_indices[2]
