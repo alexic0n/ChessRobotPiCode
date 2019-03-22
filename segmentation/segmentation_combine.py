@@ -7,7 +7,7 @@ def segmentation_board(image_color, template_color=[], previous_coordinate=[]):
     if len(template_color) == 0:
         output = segmentation_analysis(image_color)
         template = image_color[output[0][1]:output[1][1], output[0][0]:output[1][0]]
-        return output
+        return template, output
 
     # mode 2: when there is template
     else:
@@ -157,9 +157,6 @@ def segmentation_analysis(image):
     img_gray_shift = np.roll(img_gray, d, 0)
     img_gray_shift = np.roll(img_gray_shift, d, 1)
     img_edge = np.uint8(np.absolute(img_gray - img_gray_shift))
-
-    cv2.imwrite("Image.jpg", img_edge)
-    cv2.waitKey(0)
 
     # 3: summing the edge and smooth the graph
 
