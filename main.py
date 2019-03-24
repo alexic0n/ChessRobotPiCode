@@ -2,171 +2,321 @@
 # from classes.boardState import *
 # from classes.move import *
 import sys
-sys.path.append("util/pythonchess")
+sys.path.append("./util/pythonchess")
 import chess
 import chess.engine
 import cv2 as cv
 import pyttsx3 as tts
+import glob
+import getch
 
+sys.path.append("./")
 from classes.aiInterface import *
-from classes.redbluecoordinates import *
-# from classes.segmentation import *
-from util.segmentation_combine import *
+from classes.segmentation_analysis import *
 from util.util import *
-from util.parallax_shift import *
 from util.planner import *
+import requests
+import json
+from crop import crop_squares
 
-CAMERA_HEIGHT = 80
-AVG_PIECE_HEIGHT = 6
+img_path = "images/image.jpg"
 
-def userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechEngine):
-    #print("The current board state is:\n") #show the user the current board on command line
-    #print(board)
-    #print("\nYour legal moves are: ")
-    #counter = 0
-    #listOfLegalMoves = []
-    #for a in board.legal_moves:
-        #listOfLegalMoves.insert(counter,str(a))
-        #print(a)
-        #counter = counter + 1
-    print("\nMake your move on the board.")
+def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine, vc, firstImage, rotateImage): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
+        TextToSpeechEngine.say("Checkmate: Game Over!")
+        TextToSpeechEngine.runAndWait()
         return False
     if(board.is_check()):
         print("You are in check...save your king!")
-    realboard = redblue.getBoardState(topleft,bottomright,vc)
-    if(realboard == "q"):
-        return False
-    if(realboard == "imagereadfail"):
-        return userTurn(board,computerSide,redblue,topleft,bottomright,vc,TextToSpeechEngine)
-    result, move = computerSide.userTurn(realboard)
-    if not result:
-        return userTurn(board,computerSide,redblue,topleft,bottomright,vc,TextToSpeechEngine)
-    TextToSpeechEngine.say(str(move))
-    print(str(move))
-    TextToSpeechEngine.runAndWait()
-    board.push(move)
-    return True
+        TextToSpeechEngine.say("You are in check...save your king!")
+        TextToSpeechEngine.runAndWait()
 
-# capture, segment, shift corners, check
-def detectBoardLoop(vc):
-    print("Segmenting board...")
+    print("Type q to quit.")
+    if(getch.getch() == "q"):
+        return False
+
+    TextToSpeechEngine.say("Make your move on the board. Confirm by pressing 1.")
+    TextToSpeechEngine.runAndWait()
+    print("Make your move on the board. Confirm by pressing 1.")
+    waitForConfirmationInput()
+
+    # Capture image
     counter = 0
     while(counter < 5):
-        ret,img = vc.read()
+        ret,image = vc.read()
         counter += 1
-    ret,emptyboardimage = vc.read()
-    cv.imwrite("EMPTYBOARDIMAGE.jpg",emptyboardimage)
 
-    # topleft, bottomright = segmentation_board(emptyboardimage)
-    template, [topleft, bottomright] = segmentation_board(emptyboardimage, is_empty_board = True)
+    image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    cv.imwrite(img_path, image)
 
-    cropped = emptyboardimage[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-    cv.imwrite("cropped.jpg",cropped)
+    probability_rank = '0'
+    currentLegalMoves = getLegalMoves(board)
+    originKnown = False
+    kingside = 'false'
+    queenside = 'false'
 
-    if (topleft == [0,0] and bottomright == [0,0]):
-        inp = input("Could not find the board! Press Q to quit: ")
-        if (inp == "q"): return None, None
-        return detectBoardLoop(vc)
+    # Check if castling move is available
+    fen = board.fen()
+    castling = fen.split(" ")[2]
+    if (WorB == 'w'):
+        castling_moves = []
+        lastRow = fen.split(" ")[0].split("/")[7]
+        if "K" in castling:
+            if lastRow[-2] == "2":
+                kingside = 'true'
+                castling_moves.append("f1")
+        if "Q" in castling:
+            if lastRow[1] == "3":
+                queenside = 'true'
+                castling_moves.append("c1")
+        if queenside or kingside:
+            castling_moves.append("e1")
 
-    boardShapeY = emptyboardimage.shape[0]
-    boardShapeX = emptyboardimage.shape[1]
-    centerX = boardShapeX / 2
-    centerY = boardShapeY / 2
+    else:
+        castling_moves = []
+        firstRow = fen.split(" ")[0].split("/")[0]
+        if "k" in castling:
+            if firstRow[-2] == "2":
+                kingside = 'true'
+                castling_moves.append("f8")
+        if "q" in castling:
+            if firstRow[1] == "3":
+                queenside = 'true'
+                castling_moves.append("c8")
+        if queenside or kingside:
+            castling_moves.append("e8")
 
-    print("Shifting...")
-    topleft = parallax_shift(topleft, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
-    bottomright = parallax_shift(bottomright, [centerX, centerY], CAMERA_HEIGHT, AVG_PIECE_HEIGHT)
 
-    if (topleft[0] < 0 or topleft[1] < 0 or bottomright[0] >= boardShapeX or bottomright[1] >= boardShapeY):
-        inp = input("Could not see the whole board, center the board or move the camera upwards, press Q to quit: ")
-        if (inp == "q"): return None, None
-        return detectBoardLoop(vc)
+    incorrect_count = 0
 
-    return topleft, bottomright
+    while (True):
+        print('Making request to Tardis.')
+        r = requests.post("http://www.checkmate.tardis.ed.ac.uk/pieces", files={
+            'board': open(img_path, 'rb'),
+            'fen': board.fen(),
+            'validmoves': str(currentLegalMoves),
+            'kingside': kingside,
+            'queenside': queenside,
+            'probability_rank': probability_rank,
+            'WorB': WorB,
+            'firstImage': firstImage,
+            'rotateImage': rotateImage
+        })
+
+        firstImage = 'false'
+
+        data = r.json()
+
+        rotateImage = data['rotateImage']
+
+        if (len(data['move']) == 5):
+            if (data['move'][2] == "a"):
+                # Queenside castling
+                TextToSpeechEngine.say("You have made queenside castling. Is this correct?")
+                TextToSpeechEngine.runAndWait()
+                print("You have made queenside castling. Is this correct? y or n")
+                is_correct = waitForConfirmationInputYesNo()
+                if (is_correct == 'n'):
+                    queenside = 'false'
+
+            if (data['move'][2] == "h"):
+                # Kingside castling
+                TextToSpeechEngine.say("You have made kingside castling. Is this correct?")
+                TextToSpeechEngine.runAndWait()
+                print("You have made kingside castling. Is this correct? y or n")
+                is_correct = waitForConfirmationInputYesNo()
+                if (is_correct == 'n'):
+                    kingside = 'false'
+
+        else:
+            TextToSpeechEngine.say(data['status'] + ". Is this correct?")
+            TextToSpeechEngine.runAndWait()
+            print(data['status'] + ". Is this correct? y or n")
+            is_correct = waitForConfirmationInputYesNo()
+
+        if is_correct == 'y':
+            if (len(data['move']) == 5):
+                move_str = data['move'][0:4]
+            else:
+                move_str = data['move']
+
+            print(move_str)
+            move = chess.Move.from_uci(move_str)
+            board.push(move)
+            computerSide.userTurn(move)
+            return True
+
+
+        else:
+            # NEXT PROBABLE MOVE
+            if not originKnown:
+                status_list = data['status'].split(" ")
+                piece = status_list[0]
+                origin = status_list[3]
+                if not (len(data['move']) == 5):
+                    TextToSpeechEngine.say("Have you moved a {} from {}?".format(piece, origin))
+                    TextToSpeechEngine.runAndWait()
+                    print("Have you moved a {} from {}? y or n".format(piece, origin))
+                    is_origin = waitForConfirmationInputYesNo()
+                    if (is_origin == 'y'):
+                        originKnown = True
+                        currentLegalMoves = [move for move in currentLegalMoves if not move == data['move'] and move[0:2] == origin]
+                    else:
+                        incorrect_count = incorrect_count + 1
+                        if incorrect_count == 2:
+                            TextToSpeechEngine.say('Are you sure that you made a legal move?')
+                            TextToSpeechEngine.runAndWait()
+                            print('Are you sure that you made a legal move? y or n')
+                            is_legal = waitForConfirmationInputYesNo()
+
+                            if is_legal == 'y':
+                                probability_rank = str(int(data['probability_rank']) + 1)
+                            else:
+                                TextToSpeechEngine.say("Please make a new move. Press 1 to confirm.")
+                                TextToSpeechEngine.runAndWait()
+                                print("Please make a new move. Press 1 to confirm.")
+                                waitForConfirmationInput()
+                                originKnown = False
+                                incorrect_count = 0
+
+                                # Capture image
+                                counter = 0
+                                while(counter < 5):
+                                    ret,image = vc.read()
+                                    counter += 1
+
+                                image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+                                cv.imwrite(img_path, image)
+
+                                currentLegalMoves = getLegalMoves(board)
+                        else:
+                            probability_rank = str(int(data['probability_rank']) + 1)
+                            currentLegalMoves = [move for move in currentLegalMoves if not move[0:2] == origin]
+            else:
+                currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
+
+        if (len(currentLegalMoves) == 0):
+            TextToSpeechEngine.say("Your move is invalid. Please make a new move. Confirm new move by pressing 1.")
+            TextToSpeechEngine.runAndWait()
+            print("Your move is invalid. Please make a new move and confirm when you have done so by pressing 1.")
+            waitForConfirmationInput()
+            incorrect_count = 0
+            originKnown = False
+            # Capture image
+            counter = 0
+            while(counter < 5):
+                ret,image = vc.read()
+                counter += 1
+
+            image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+            cv.imwrite(img_path, image)
+
+            currentLegalMoves = getLegalMoves(board)
+
+def getLegalMoves(board):
+    x = board.legal_moves
+    legalMoves = []
+    for move in x:
+        legalMoves.append(str(move))
+    return legalMoves
+
+def waitForConfirmationInputYesNo():
+    return getch.getch()
+
+def waitForConfirmationInput():
+    confirmed = getch.getch()
+    if(confirmed == '1'):
+        return True
+    else:
+        return waitForConfirmationInput()
 
 def gameplayloop(board):
-    wOrB = input("White or black (w/b): ")
-    thinkTime = input("How long should I think per turn: ")
-    x = input("Please confirm the board is clear before proceeding.")
     vc = cv.VideoCapture(0)
-    
+
     TextToSpeechEngine = tts.init()
-    TextToSpeechEngine.setProperty("volume", 1)
-    TextToSpeechEngine.setProperty("rate", 1)
-    computerSide = ChessMatch(float(thinkTime))
-    redblue = coordinateFinder()
+    TextToSpeechEngine.setProperty("volume", 15)
+    TextToSpeechEngine.setProperty("rate", 170)
 
-    topleft, bottomright = detectBoardLoop(vc)
+    TextToSpeechEngine.say("Please confirm the board is clear before proceeding.")
+    TextToSpeechEngine.runAndWait()
+    print("Please confirm the board is clear before proceeding by pressing 1.")
+    waitForConfirmationInput()
+    #thinkTime = input("How long should I think per turn: ") #user can play as white or black, however for now it only works if white is at bottom of image and black is at top.
 
-    if (topleft == None and bottomright == None):
-        computerSide.endgame()
-        exit()
+    TextToSpeechEngine.say("Select mode of play.")
+    TextToSpeechEngine.runAndWait()
+    print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
+    mode = getch.getch()
 
-    observedBoard = redblue.getBoardState(topleft,bottomright,vc, True)
-    if observedBoard != "********/********/********/********/********/********/********/********":
-        print("Board is not empty")
-    
-    while True:
-        observedBoard = redblue.getBoardState(topleft,bottomright,vc, True)
-        if observedBoard == "bbbbbbbb/bbbbbbbb/********/********/********/********/wwwwwwww/wwwwwwww": break
-        input("Inital board state not found, please set up the board")
 
-    
-    if(wOrB == 'b'):
+    TextToSpeechEngine.say("White or black?")
+    TextToSpeechEngine.runAndWait()
+    print("White or black? w or b: ")
+    worB = getch.getch()
+
+    # Capture image
+    counter = 0
+    while(counter < 5):
+        ret,image = vc.read()
+        counter += 1
+
+    image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    cv.imwrite(img_path, image)
+
+    topleft, bottomright = segmentation_analysis(img) #find the coordinates of the board within the camera frame
+
+    mode_dict = {
+        "e":1,
+        "m":3,
+        "h":5,
+        "p":7
+    }
+
+    depth = mode_dict.get(mode)
+    computerSide = ChessMatch(float(depth)) #set up our AI interface, initialised with a time it may process the board for
+
+    firstImage = 'true'
+    rotateImage = 'false'
+
+    if(worB == 'b'): #run the game recursively until the user quits or checkmate is achieved
         while(True):
-            x = computerSide.aiTurn()
+            x = computerSide.aiTurn() #obtain the move the ai would make
 
-            # Planning
-            move = str(x)
-            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
-            coordinates = redblue.coordinates  # assume middle for all squares
-            print
-            boardDimensions = {
-                "left": topleft[0], 
-                "right": bottomright[0], 
-                "top": topleft[1], 
-                "bottom": bottomright[1]
-            }
-            if board.ep_square: enpassant = chess.square_name(board.ep_square)
-            else: enpassant = "-"
-            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
-            for action in actions: print("action:", action)
-
-            board.push(x)
-            print("AI makes move: {}.".format(x),"\n")
-            print(board)
-            stopNow = userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechEngine)
-            if(not stopNow):
-                computerSide.endgame()
+            if (x == None):
+                print("Congratulations! You won the game.")
+                TextToSpeechEngine.say("Congratulations! You won the game.")
+                TextToSpeechEngine.runAndWait()
                 break
+            else:
+                board.push(x)
+                #planSimple(str(x))
+                print("AI makes move: {}.".format(x),"\n")
+                print(board)
+                stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', TextToSpeechEngine, vc, firstImage, rotateImage)
+                print(board)
+                if(not stopNow):
+                    computerSide.endgame()
+                    break
     else:
-        while(True):
-            stopNow = userTurn(board, computerSide, redblue, topleft, bottomright,vc,TextToSpeechEngine)
-            if(not stopNow):
+        while (True):
+            stopNow = userTurn(board, computerSide, topleft, bottomright, 'w', TextToSpeechEngine, vc, firstImage, rotateImage)
+            print(board)
+            if (not stopNow):
                 computerSide.endgame()
                 break
             x = computerSide.aiTurn()
 
-            # Planning
-            move = str(x)
-            boardWithSpaces = computerSide.convertToFenWithSpaces(board.fen())
-            coordinates = redblue.coordinates  # assume middle for all squares
-            boardDimensions = {
-                "left": topleft[0], 
-                "right": bottomright[0], 
-                "top": topleft[1], 
-                "bottom": bottomright[1]
-            }
-            if board.ep_square: enpassant = chess.square_name(board.ep_square)
-            else: enpassant = "-"
-            actions = plan(move, boardWithSpaces, coordinates, boardDimensions, enpassant)
-            for action in actions: print("action:", action)
-
-            board.push(x)
-            print("AI makes move: {}.".format(x),"\n")
-            print(board)
+            if (x == None):
+                print("Congratulations! You won the game.")
+                TextToSpeechEngine.say("Congratulations! You won the game.")
+                TextToSpeechEngine.runAndWait()
+                break
+            else:
+                board.push(x)
+                #planSimple(str(x))
+                print("AI makes move: {}.".format(x), "\n")
+                print(board)
 
 def main():
     board = chess.Board()

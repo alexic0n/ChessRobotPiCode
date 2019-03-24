@@ -11,7 +11,7 @@ class ChessMatch:
     def __init__(self, depth):
         self.limit = chess.engine.Limit(depth = depth)
         self.board = chess.Board()
-        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/MachineLearning/pi/machinelearning/StockfishArm7/stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci("/home/student/MachineLearning/pi/util/stockfish")
 
     def endgame(self):
         self.engine.quit()
