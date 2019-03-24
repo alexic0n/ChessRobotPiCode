@@ -255,11 +255,13 @@ def gameplayloop(board):
     # Capture image
     counter = 0
     while(counter < 5):
-        ret,img = vc.read()
+        ret,image = vc.read()
         counter += 1
-    img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-    cv.imwrite(img_path, img)
 
+    cv.imwrite("images/image.jpg",image)
+
+    # Take last image from the webcam
+    #paths = glob.glob('images/*.jpg')
     topleft, bottomright = segmentation_analysis(image) #find the coordinates of the board within the camera frame
 
     mode_dict = {
