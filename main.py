@@ -44,9 +44,15 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
     # Capture image
     counter = 0
     while(counter < 5):
-        ret,image = vc.read()
+        ret,img = vc.read()
         counter += 1
+    if img is None:
+        return "imagereadfail"  
+    cv.imwrite("images/image.jpg",img)    
 
+    # Take last image from the webcam
+    img_path = "images/image.jpg"
+    image = cv.imread(img_path)
     image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
     cv.imwrite(img_path, image)
 
@@ -147,7 +153,6 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             computerSide.userTurn(move)
             return True
 
-
         else:
             # NEXT PROBABLE MOVE
             if not originKnown:
@@ -183,9 +188,16 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                                 # Capture image
                                 counter = 0
                                 while(counter < 5):
-                                    ret,image = vc.read()
+                                    ret,img = vc.read()
                                     counter += 1
-
+                                if img is None:
+                                    return "imagereadfail"
+                                cv.imwrite("images/image.jpg",img)
+                
+                                # Take last image from the webcam
+                                img_path = "images/image.jpg"
+                                image = cv.imread(img_path)
+                
                                 image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
                                 cv.imwrite(img_path, image)
 
@@ -203,11 +215,20 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             waitForConfirmationInput()
             incorrect_count = 0
             originKnown = False
+           
             # Capture image
             counter = 0
             while(counter < 5):
-                ret,image = vc.read()
+                ret,img = vc.read()
                 counter += 1
+            if img is None:
+                return "imagereadfail"
+            cv.imwrite("images/image.jpg",img)
+
+            # Take last image from the webcam
+            #paths = glob.glob('images/*.jpg')
+            img_path = "images/image.jpg"
+            image = cv.imread(img_path)
 
             image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
             cv.imwrite(img_path, image)
@@ -258,13 +279,20 @@ def gameplayloop(board):
     # Capture image
     counter = 0
     while(counter < 5):
-        ret,image = vc.read()
+        ret,img = vc.read()
         counter += 1
+        
+    if img is None:
+        return "imagereadfail"
+    
+    cv.imwrite("images/image.jpg",img)
+    
+    # Take last image from the webcam
+    #paths = glob.glob('images/*.jpg')
+    img_path = "images/image.jpg"
+    image = cv.imread(img_path)
 
-    image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-    cv.imwrite(img_path, image)
-
-    topleft, bottomright = segmentation_analysis(img) #find the coordinates of the board within the camera frame
+    topleft, bottomright = segmentation_analysis(image) #find the coordinates of the board within the camera frame
 
     mode_dict = {
         "e":1,
