@@ -46,15 +46,8 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
     while(counter < 5):
         ret,img = vc.read()
         counter += 1
-    if img is None:
-        return "imagereadfail"  
-    cv.imwrite("images/image.jpg",img)    
-
-    # Take last image from the webcam
-    img_path = "images/image.jpg"
-    image = cv.imread(img_path)
-    image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-    cv.imwrite(img_path, image)
+    img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    cv.imwrite(img_path, img)
 
     probability_rank = '0'
     currentLegalMoves = getLegalMoves(board)
@@ -190,16 +183,8 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                                 while(counter < 5):
                                     ret,img = vc.read()
                                     counter += 1
-                                if img is None:
-                                    return "imagereadfail"
-                                cv.imwrite("images/image.jpg",img)
-                
-                                # Take last image from the webcam
-                                img_path = "images/image.jpg"
-                                image = cv.imread(img_path)
-                
-                                image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-                                cv.imwrite(img_path, image)
+                                img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+                                cv.imwrite(img_path, img)
 
                                 currentLegalMoves = getLegalMoves(board)
                         else:
@@ -215,23 +200,14 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             waitForConfirmationInput()
             incorrect_count = 0
             originKnown = False
-           
+
             # Capture image
             counter = 0
             while(counter < 5):
                 ret,img = vc.read()
                 counter += 1
-            if img is None:
-                return "imagereadfail"
-            cv.imwrite("images/image.jpg",img)
-
-            # Take last image from the webcam
-            #paths = glob.glob('images/*.jpg')
-            img_path = "images/image.jpg"
-            image = cv.imread(img_path)
-
-            image = image[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
-            cv.imwrite(img_path, image)
+            img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+            cv.imwrite(img_path, img)
 
             currentLegalMoves = getLegalMoves(board)
 
@@ -281,16 +257,8 @@ def gameplayloop(board):
     while(counter < 5):
         ret,img = vc.read()
         counter += 1
-        
-    if img is None:
-        return "imagereadfail"
-    
-    cv.imwrite("images/image.jpg",img)
-    
-    # Take last image from the webcam
-    #paths = glob.glob('images/*.jpg')
-    img_path = "images/image.jpg"
-    image = cv.imread(img_path)
+    img = img[topleft[1]:bottomright[1], topleft[0]:bottomright[0]]
+    cv.imwrite(img_path, img)
 
     topleft, bottomright = segmentation_analysis(image) #find the coordinates of the board within the camera frame
 
