@@ -7,7 +7,6 @@ import chess
 import chess.engine
 import cv2 as cv
 import pyttsx3 as tts
-import glob
 import getch
 import pyaudio
 import wave
@@ -24,12 +23,12 @@ from crop import crop_squares
 img_path = "images/image.jpg"
 
 # Audio settings
+mic_name = 'USB Device 0x46d:0x825: Audio (hw:1,0)'
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 16000# 44.1kHz sampling rate
-chunk = 4096 # 2^12 samples for buffer
+chunk = 512 # 2^12 samples for buffer
 record_secs = 6 # seconds to record
-dev_index = 2 # device index found by p.get_device_info_by_index(ii)
 wav_output_filename = 'audio.wav' # name of .wav file
 
 def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine, vc, firstImage, rotateImage, control): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
@@ -123,7 +122,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                 TextToSpeechEngine.runAndWait()
                 print("You have made queenside castling. Is this correct? y or n")
                 if (control == '2'):
-                    is_correct = audio_to_text()[0].lower()
+                    is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
                 else:
                     is_correct = waitForConfirmationInputYesNo()
                 if (is_correct == 'n'):
@@ -135,7 +134,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                 TextToSpeechEngine.runAndWait()
                 print("You have made kingside castling. Is this correct? y or n")
                 if (control == '2'):
-                    is_correct = audio_to_text()[0].lower()
+                    is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
                 else:
                     is_correct = waitForConfirmationInputYesNo()
                 if (is_correct == 'n'):
@@ -146,7 +145,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
             TextToSpeechEngine.runAndWait()
             print(data['status'] + ". Is this correct? y or n")
             if (control == '2'):
-                is_correct = audio_to_text()[0].lower()
+                is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
             else:
                 is_correct = waitForConfirmationInputYesNo()
 
@@ -174,7 +173,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     print("Have you moved a {} from {}? y or n".format(piece, origin))
                     
                     if (control == '2'):
-                        is_origin = audio_to_text()[0].lower()
+                        is_origin = audio_to_text(TextToSpeechEngine)[0].lower()
                     else:
                         is_origin = waitForConfirmationInputYesNo()
                         
@@ -188,7 +187,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                             TextToSpeechEngine.runAndWait()
                             print('Are you sure that you made a legal move? y or n')
                             if (control == '2'):
-                                is_legal = audio_to_text()[0].lower()
+                                is_legal = audio_to_text(TextToSpeechEngine)[0].lower()
                             else:
                                 is_legal = waitForConfirmationInputYesNo()
 
@@ -257,47 +256,73 @@ def waitForConfirmationInput():
     else:
         return waitForConfirmationInput()
     
-def audio_to_text():
-    #Initalize microphone
-    audio = pyaudio.PyAudio()
+def audio_to_text(TextToSpeechEngine):    
+    text = "Sorry, can you please repeat that?"
     
-    # create pyaudio stream
-    stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
-                        input_device_index = dev_index,input = True, \
-                        frames_per_buffer=chunk)
-    print("recording")
-    frames = []
+    while (text == "Sorry, can you please repeat that?"):
+        #Initalize microphone
+        audio = pyaudio.PyAudio()
+        
+        dev_index = -1
+        for ii in range(audio.get_device_count()):
+            name = audio.get_device_info_by_index(ii).get('name')
+            if (name == mic_name):
+                dev_index = ii 
+            
+        if (dev_index == -1):
+            TextToSpeechEngine.say("Unable to detect microphone. Please unplug and plug it again.")
+            TextToSpeechEngine.runAndWait()
+            print("Unable to detect microphone. Please unplug and plug it again.")
+            sys.exit()
+        
+        # create pyaudio stream
+        stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
+                            input_device_index = dev_index,input = True, \
+                            frames_per_buffer=chunk)
+        print("recording")
+        frames = []
+        
+        # loop through stream and append audio chunks to frame array
+        for ii in range(0,int((samp_rate/chunk)*record_secs)):
+            data = stream.read(chunk, exception_on_overflow = False)
+            frames.append(data)
+        
+        print("finished recording")
+        
+        # stop the stream, close it, and terminate the pyaudio instantiation
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        
+        # save the audio frames as .wav file
+        wavefile = wave.open(wav_output_filename,'wb')
+        wavefile.setnchannels(chans)
+        wavefile.setsampwidth(audio.get_sample_size(form_1))
+        wavefile.setframerate(samp_rate)
+        wavefile.writeframes(b''.join(frames))
+        wavefile.close()
+        
+        r = requests.post("http://www.checkmate.tardis.ed.ac.uk/speech_recognition", files={
+            'user_speech': open('audio.wav', 'rb'),
+        })
+        
+        data = r.json()
+        
+        text = data['text']
+        if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
+            TextToSpeechEngine.say("Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead.")
+            TextToSpeechEngine.runAndWait()
+            print(text)
+            sys.exit()
+        if (text == "Sorry, can you please repeat that?"):
+            TextToSpeechEngine.say("Sorry, can you please repeat that?")
+            TextToSpeechEngine.runAndWait()
+            print(text)
     
-    # loop through stream and append audio chunks to frame array
-    for ii in range(0,int((samp_rate/chunk)*record_secs)):
-        data = stream.read(chunk, exception_on_overflow = False)
-        frames.append(data)
-    
-    print("finished recording")
-    
-    # stop the stream, close it, and terminate the pyaudio instantiation
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-    
-    # save the audio frames as .wav file
-    wavefile = wave.open(wav_output_filename,'wb')
-    wavefile.setnchannels(chans)
-    wavefile.setsampwidth(audio.get_sample_size(form_1))
-    wavefile.setframerate(samp_rate)
-    wavefile.writeframes(b''.join(frames))
-    wavefile.close()
-    
-    r = requests.post("http://www.checkmate.tardis.ed.ac.uk/speech_recognition", files={
-        'user_speech': open('audio.wav', 'rb'),
-    })
-    
-    data = r.json()
-    
-    return data['text']
+    return text
     
 
-def gameplayloop(board):
+def gameplayloop(board, control):
     #Initialize camera
     vc = cv.VideoCapture(0)
 
@@ -310,17 +335,12 @@ def gameplayloop(board):
     print("Please confirm the board is clear before proceeding by pressing 1.")
     waitForConfirmationInput()
 
-    TextToSpeechEngine.say("Select 1 for keyboard control. Select 2 for voice control.")
-    TextToSpeechEngine.runAndWait()    
-    print("Select 1 for keyboard control. Select 2 for voice control.")
-    control = getch.getch()
-
     TextToSpeechEngine.say("Select mode of play.")
     TextToSpeechEngine.runAndWait()    
     print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
     
     if (control == '2'):
-        mode = audio_to_text()[0].lower()
+        mode = audio_to_text(TextToSpeechEngine)[0].lower()
     else:
         mode = getch.getch()
 
@@ -329,7 +349,7 @@ def gameplayloop(board):
     print("White or black? w or b: ")
     
     if (control == '2'):
-        worB = audio_to_text()[0].lower()
+        worB = audio_to_text(TextToSpeechEngine)[0].lower()
     else:
         worB = getch.getch()
 
@@ -341,8 +361,6 @@ def gameplayloop(board):
 
     cv.imwrite("images/image.jpg",image)
 
-    # Take last image from the webcam
-    #paths = glob.glob('images/*.jpg')
     topleft, bottomright = segmentation_analysis(image) #find the coordinates of the board within the camera frame
 
     mode_dict = {
@@ -353,6 +371,8 @@ def gameplayloop(board):
     }
 
     depth = mode_dict.get(mode)
+    print(mode)
+    print(depth)
     computerSide = ChessMatch(float(depth)) #set up our AI interface, initialised with a time it may process the board for
 
     firstImage = 'true'
@@ -370,6 +390,8 @@ def gameplayloop(board):
             else:
                 board.push(x)
                 #planSimple(str(x))
+                TextToSpeechEngine.say("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
+                TextToSpeechEngine.runAndWait()
                 print("AI makes move: {}.".format(x),"\n")
                 print(board)
                 stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', TextToSpeechEngine, vc, firstImage, rotateImage, control)
@@ -394,13 +416,15 @@ def gameplayloop(board):
             else:
                 board.push(x)
                 #planSimple(str(x))
+                TextToSpeechEngine.say("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
+                TextToSpeechEngine.runAndWait()
                 print("AI makes move: {}.".format(x), "\n")
                 print(board)
 
-def main():
+def main(control):
     board = chess.Board()
     
-    gameplayloop(board)
+    gameplayloop(board, control)
 
 if __name__ == '__main__':
     main()
