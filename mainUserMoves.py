@@ -23,27 +23,66 @@ from crop import crop_squares
 img_path = "images/image.jpg"
 
 # Audio settings
-mic_name = 'USB Device 0x46d:0x825: Audio (hw:1,0)'
+mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
-samp_rate = 16000# 44.1kHz sampling rate
+samp_rate = 44100# 44.1kHz sampling rate
 chunk = 512 # 2^12 samples for buffer
-record_secs = 6 # seconds to record
+record_secs = 4 # seconds to record
 wav_output_filename = 'audio.wav' # name of .wav file
+
+def play_sound(path):
+    #define stream chunk   
+    chunk = 1024  
+    
+    #open a wav format music  
+    f = wave.open(path)  
+    #instantiate PyAudio  
+    p = pyaudio.PyAudio()  
+    #open stream  
+    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
+                    channels = f.getnchannels(),  
+                    rate = f.getframerate(),  
+                    output = True)  
+    #read data  
+    data = f.readframes(chunk)  
+    
+    #play stream  
+    while data:  
+        stream.write(data)  
+        data = f.readframes(chunk)  
+    
+    #stop stream  
+    stream.stop_stream()  
+    stream.close()  
+    
+    #close PyAudio  
+    p.terminate()
+    
+def text_to_speech(text):
+    r = requests.post("http://www.checkmate.tardis.ed.ac.uk/text_to_speech", files={
+            'text': text,
+        })
+
+    with wave.open('sounds/audio.wav','wb') as file:
+            file.setnchannels(1)
+            file.setsampwidth(2)
+            file.setframerate(26500)
+            file.writeframes(r.content)
+    
+    play_sound('sounds/audio.wav')
 
 def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine, vc, firstImage, rotateImage, control): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
-        TextToSpeechEngine.say("Checkmate: Game Over!")
-        TextToSpeechEngine.runAndWait()
+        play_sound('sounds/game_over.wav')
         return False
     if(board.is_check()):
         print("You are in check...save your king!")
-        TextToSpeechEngine.say("You are in check...save your king!")
-        TextToSpeechEngine.runAndWait()
+        play_sound('sounds/check.wav')
 
-    TextToSpeechEngine.say("Make your move on the board. Confirm by pressing 1")
-    TextToSpeechEngine.runAndWait()
+    play_sound('sounds/move_user_button.wav')
+        
     print("Make your move on the board. Confirm by pressing 1.")
     waitForConfirmationInput()
 
@@ -118,8 +157,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
         if (len(data['move']) == 5):
             if (data['move'][2] == "a"):
                 # Queenside castling
-                TextToSpeechEngine.say("You have made queenside castling. Is this correct?")
-                TextToSpeechEngine.runAndWait()
+                play_sound('sounds/queenside_castling.wav')
                 print("You have made queenside castling. Is this correct? y or n")
                 if (control == '2'):
                     is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
@@ -130,8 +168,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
 
             if (data['move'][2] == "h"):
                 # Kingside castling
-                TextToSpeechEngine.say("You have made kingside castling. Is this correct?")
-                TextToSpeechEngine.runAndWait()
+                play_sound('sounds/kingside_castling.wav')
                 print("You have made kingside castling. Is this correct? y or n")
                 if (control == '2'):
                     is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
@@ -141,8 +178,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     kingside = 'false'
 
         else:
-            TextToSpeechEngine.say(data['status'] + ". Is this correct?")
-            TextToSpeechEngine.runAndWait()
+            text_to_speech(data['status'] + ". Is this correct?")
             print(data['status'] + ". Is this correct? y or n")
             if (control == '2'):
                 is_correct = audio_to_text(TextToSpeechEngine)[0].lower()
@@ -168,8 +204,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                 piece = status_list[0]
                 origin = status_list[3]
                 if not (len(data['move']) == 5):
-                    TextToSpeechEngine.say("Have you moved a {} from {}?".format(piece, origin))
-                    TextToSpeechEngine.runAndWait()
+                    text_to_speech("Have you moved a {} from {}?".format(piece, origin))
                     print("Have you moved a {} from {}? y or n".format(piece, origin))
                     
                     if (control == '2'):
@@ -183,8 +218,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                     else:
                         incorrect_count = incorrect_count + 1
                         if incorrect_count == 2:
-                            TextToSpeechEngine.say('Are you sure that you made a legal move?')
-                            TextToSpeechEngine.runAndWait()
+                            play_sound('sounds/legal_move.wav')
                             print('Are you sure that you made a legal move? y or n')
                             if (control == '2'):
                                 is_legal = audio_to_text(TextToSpeechEngine)[0].lower()
@@ -194,8 +228,8 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                             if is_legal == 'y':
                                 probability_rank = str(int(data['probability_rank']) + 1)
                             else:
-                                TextToSpeechEngine.say("Please make a new move. Press 1 to confirm.")
-                                TextToSpeechEngine.runAndWait()
+                                play_sound('sound/move_again_user.wav')
+              
                                 print("Please make a new move. Press 1 to confirm.")
                                 waitForConfirmationInput()
                                 originKnown = False
@@ -217,9 +251,8 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, TextToSpeechEngine
                 currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
 
         if (len(currentLegalMoves) == 0):
-            TextToSpeechEngine.say("Your move is invalid. Please make a new move. Confirm new move by pressing 1.")
-            TextToSpeechEngine.runAndWait()
-            print("Your move is invalid. Please make a new move and confirm when you have done so by pressing 1.")
+            play_sound('sounds/invalid_move.wav')
+            print("Your move is invalid. Please make a new move and confirm it by pressing 1.")
             waitForConfirmationInput()
             incorrect_count = 0
             originKnown = False
@@ -270,8 +303,7 @@ def audio_to_text(TextToSpeechEngine):
                 dev_index = ii 
             
         if (dev_index == -1):
-            TextToSpeechEngine.say("Unable to detect microphone. Please unplug and plug it again.")
-            TextToSpeechEngine.runAndWait()
+            play_sound('sounds/mic_not_detected.wav')
             print("Unable to detect microphone. Please unplug and plug it again.")
             sys.exit()
         
@@ -279,7 +311,10 @@ def audio_to_text(TextToSpeechEngine):
         stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
                             input_device_index = dev_index,input = True, \
                             frames_per_buffer=chunk)
+        
         print("recording")
+        play_sound('sounds/beep.wav')
+        
         frames = []
         
         # loop through stream and append audio chunks to frame array
@@ -288,6 +323,7 @@ def audio_to_text(TextToSpeechEngine):
             frames.append(data)
         
         print("finished recording")
+        play_sound('sounds/beep.wav')
         
         # stop the stream, close it, and terminate the pyaudio instantiation
         stream.stop_stream()
@@ -310,13 +346,11 @@ def audio_to_text(TextToSpeechEngine):
         
         text = data['text']
         if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
-            TextToSpeechEngine.say("Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead.")
-            TextToSpeechEngine.runAndWait()
+            play_sound('sounds/server_down.wav')
             print(text)
             sys.exit()
         if (text == "Sorry, can you please repeat that?"):
-            TextToSpeechEngine.say("Sorry, can you please repeat that?")
-            TextToSpeechEngine.runAndWait()
+            play_sound('sounds/repeat.wav')
             print(text)
     
     return text
@@ -330,35 +364,58 @@ def gameplayloop(board, control):
     TextToSpeechEngine.setProperty("volume", 15)
     TextToSpeechEngine.setProperty("rate", 170)
 
-    TextToSpeechEngine.say("Please confirm the board is clear before proceeding.")
-    TextToSpeechEngine.runAndWait()
+    play_sound('sounds/board_clear.wav')
     print("Please confirm the board is clear before proceeding by pressing 1.")
     waitForConfirmationInput()
 
-    TextToSpeechEngine.say("Select mode of play.")
-    TextToSpeechEngine.runAndWait()    
     print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
     
     if (control == '2'):
+        play_sound('sounds/mode_of_play_speech.wav')
         mode = audio_to_text(TextToSpeechEngine)[0].lower()
     else:
+        play_sound('sounds/mode_of_play_button.wav')
         mode = getch.getch()
+        
+    mode_text_dict = {
+        "e":'easy',
+        "m":'moderate',
+        "h":'hard',
+        "p":'pro'
+    }
+    
+    text_to_speech("You have selected {} mode.".format(mode_text_dict.get(mode, 'easy')))
+    print("You have selected {} mode.".format(mode_text_dict.get(mode, 'easy')))
 
-    TextToSpeechEngine.say("White or black?")
-    TextToSpeechEngine.runAndWait()
     print("White or black? w or b: ")
     
     if (control == '2'):
+        play_sound('sounds/white_black_speech.wav')
         worB = audio_to_text(TextToSpeechEngine)[0].lower()
     else:
+        play_sound('sounds/white_black_button.wav')
         worB = getch.getch()
+        
+    if not (worB == 'w' or worB == 'b'):
+        worB == 'w'
+    if (worB == 'w'):
+        play_sound('sounds/white.wav')
+        print("You have selected white.")
+    else:
+        play_sound('sounds/black.wav') 
+        print("You have selected black.")
 
     # Capture image
     counter = 0
     while(counter < 5):
         ret,image = vc.read()
         counter += 1
-
+    
+    if (image == None):
+        play_sound('sounds/cam_not_detected.wav')
+        print("Unable to detect camera. Please unplug and plug it again.")
+        sys.exit()
+    
     cv.imwrite("images/image.jpg",image)
 
     topleft, bottomright = segmentation_analysis(image) #find the coordinates of the board within the camera frame
@@ -371,8 +428,7 @@ def gameplayloop(board, control):
     }
 
     depth = mode_dict.get(mode)
-    print(mode)
-    print(depth)
+
     computerSide = ChessMatch(float(depth)) #set up our AI interface, initialised with a time it may process the board for
 
     firstImage = 'true'
@@ -384,14 +440,12 @@ def gameplayloop(board, control):
 
             if (x == None):
                 print("Congratulations! You won the game.")
-                TextToSpeechEngine.say("Congratulations! You won the game.")
-                TextToSpeechEngine.runAndWait()
+                play_sound('sounds/won.wav')
                 break
             else:
                 board.push(x)
                 #planSimple(str(x))
-                TextToSpeechEngine.say("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
-                TextToSpeechEngine.runAndWait()
+                text_to_speech("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
                 print("AI makes move: {}.".format(x),"\n")
                 print(board)
                 stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', TextToSpeechEngine, vc, firstImage, rotateImage, control)
@@ -410,14 +464,12 @@ def gameplayloop(board, control):
 
             if (x == None):
                 print("Congratulations! You won the game.")
-                TextToSpeechEngine.say("Congratulations! You won the game.")
-                TextToSpeechEngine.runAndWait()
+                play_sound('sounds/won.wav')
                 break
             else:
                 board.push(x)
                 #planSimple(str(x))
-                TextToSpeechEngine.say("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
-                TextToSpeechEngine.runAndWait()
+                text_to_speech("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
                 print("AI makes move: {}.".format(x), "\n")
                 print(board)
 
