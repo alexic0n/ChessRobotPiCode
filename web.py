@@ -46,19 +46,38 @@ def speech_recognition():
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
 
-    text = r.recognize_google_cloud (audio, language = "en-us", credentials_json = credential, preferred_phrases = ['yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro'])
-    print ("Google Cloud Speech Recognition thinks you said: " + text)
+    expected_words = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to']
 
-    res = json.dumps({'text':text})
+    for letter in "abcdefgh":
+        for num in "12345678":
+            square = letter + num
+            expected_words.append(square)
 
-    return res
+    expected_mistakes = ['yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
+
+    try:
+        text = r.recognize_google_cloud (audio, language = "en-us", credentials_json = credential, preferred_phrases = expected_words+expected_mistakes).lower()
+        print(text)
+        words = text.split(" ")
+        print(words)
+        if (len(words) == 4):
+            if (words[0] in expected_words and words[1] in expected_words and words[2] in expected_words):
+                 return json.dumps({'text':text})
+        for word in (expected_words+expected_mistakes):
+             if (word in text):
+                 print ("Google Cloud Speech Recognition thinks you said: " + word)
+                 return json.dumps({'text':word})
+        return json.dumps({'text':"Sorry, can you please repeat that?"})
+    except sr.UnknownValueError:
+        return json.dumps({'text':"Sorry, can you please repeat that?"})
+    except sr.RequestError:
+        return json.dumps({'text': "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."})
 
 @app.route('/pieces', methods=['POST'])
 def pieces():
     name = 'image.jpg'
 
     storage_path = os.path.join(app_root, 'images')
-
     image_path = os.path.join(storage_path, name)
 
     if not (request.files['board'] and request.files['fen'] and request.files['validmoves']  and request.files['kingside'] and request.files['queenside'] and request.files['probability_rank'] and request.files[$
@@ -108,7 +127,7 @@ def pieces():
 
         if (a1_black * h8_white > a1_white * h8_black):
             rotateImage = 'true'
-            
+
     # Controls all other functions
     # Take last image from the webcam
     image = cv2.imread(image_path)
@@ -117,6 +136,7 @@ def pieces():
     if (rotateImage == 'true'):
          (h, w) = image.shape[:2]
          # Calculate the center of the image
+
          center = (w / 2, h / 2)
 
          M = cv2.getRotationMatrix2D(center, 180, 1.0)
@@ -164,8 +184,7 @@ def pieces():
     r = json.dumps({'move':move, 'status':response, 'probability_rank':probability_rank, 'rotateImage': rotateImage})
     
     return r
-
+ 
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
-
