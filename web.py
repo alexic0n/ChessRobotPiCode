@@ -1,10 +1,13 @@
-from flask import Flask, request, abort, Markup
+from pydub import AudioSegment
+from flask import Flask, request, abort, Markup, send_file
 import markdown
 import uuid
 import os
 import bjoern
 import json
 import speech_recognition as sr
+from gtts import gTTS
+import wave
 
 # ML classes
 import cv2
@@ -29,6 +32,24 @@ app_root = os.path.dirname(os.path.abspath(__file__))
 def index():
     with open(os.path.join(app_root, 'README.md')) as r:
         return Markup(markdown.markdown(r.read()))
+
+@app.route('/text_to_speech', methods=['POST'])
+def text_to_speech():
+    if not (request.files['text']):
+        abort('401')
+    
+    text = request.files['text'].read().decode()
+    speech = gTTS(text=text, lang='en')
+    speech.save('text_to_speech.mp3')
+
+    speech = AudioSegment.from_mp3('text_to_speech.mp3')
+    speech.export('text_to_speech.wav', format="wav")
+
+    return send_file(
+         'text_to_speech.wav', 
+         mimetype="audio/wav", 
+         as_attachment=True, 
+         attachment_filename="text_to_speech.wav")
 
 @app.route('/speech_recognition', methods=['POST'])
 def speech_recognition():
@@ -115,7 +136,6 @@ def pieces():
             image = image.resize((pixels, pixels), Image.ANTIALIAS)
             image = np.array(image)
             data.append(image)
-        data = np.array(data)
 
         predictions = model.predict(data)
 
@@ -136,7 +156,6 @@ def pieces():
     if (rotateImage == 'true'):
          (h, w) = image.shape[:2]
          # Calculate the center of the image
-
          center = (w / 2, h / 2)
 
          M = cv2.getRotationMatrix2D(center, 180, 1.0)
@@ -188,3 +207,5 @@ def pieces():
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
+
+    
