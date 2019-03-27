@@ -31,3 +31,23 @@ def coordinatesToSquare(coordinates):
 
     return chr(x + 97) + str(7 - y + 1)
 
+# returns the middle of a square on a board
+def getSquareMiddle(square, boardDimensions):
+    squareSizeX = (boardDimensions["right"] - boardDimensions["left"]) / 8
+    squareSizeY = (boardDimensions["bottom"] - boardDimensions["top"]) / 8
+
+    # squareSizeX = 100 / 8
+    # squareSizeY = 100 / 8
+
+    # return {
+    #     "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
+    #     "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
+    # }
+
+    # print(boardDimensions, square["x"] * squareSizeX)
+
+    return {
+        "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
+        "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
+    }
+

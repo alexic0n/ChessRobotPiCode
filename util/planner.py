@@ -1,48 +1,42 @@
-# Use runPlanner.py to run this file !!!
-
 from util.util import *
 from util.castling import *
 import requests
 import time
 
 HOST = "192.168.105.110"
-GRIPPER_GRAB = -400
-GRIPPER_RELEASE = GRIPPER_GRAB+500
 GRIPPER_OPEN = 700
 GRIPPER_CLOSED = 0
+GRIPPER_DOWN = 100
+GRIPPER_UP = 0
+SLEEP_TIME_BETWEEN_REQUESTS = 0
+IDLE_POSITION = {"x": 0, "y": 0}
+DEAD_PIECE_POSITION = {"x": 100, "y": 100}
 
-def _request(method, endpoint, body=None):
-    response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
-    # print((method, "http://{}:8000{}".format(HOST, endpoint), body))
-    return response.text
+# the gripper's motion is limited to 0-100 but it is calibrated to be the middle of the squares,
+# rather than the very edges of the board. These numbers essentially extend the board virtually,
+# such that when the middle of the squares are being calculated they are correct. For example:
+# the middle of square [0,0] will be roughly 0,0 and the middle of square [7,7] will roughly be
+# 100,100.
+BOARD_DIMENSIONS = {
+    "left": -7,
+    "top": -7,
+    "right": 107,
+    "bottom": 107
+}
 
-
-# move: a 4 length string move
-# board: the FEN notation with * for the state of the board
-# coordinates: a dictionary of squares and the coordinates of the pieces on them
-# boardDimensions: a dictionary of coordinates for the sides of the board
-# enpassant: the 2 length square string which is en passant
-def plan(move, board, coordinates, boardDimensions, enpassant):
+def plan(
+    move, # a 4 length string move
+    board="********/********/********/********/********/********/********/********",
+            # the FEN notation with * for the state of the board
+    enpassant="-" # the 2 length square string which is en passant
+    ):
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
     # print("Board dimensions:", boardDimensions)
     # print("Board:", board)
 
-    # if no coordinates given, assume middle for all
-    if coordinates == None:
-        coordinates = allMiddleSquares(boardDimensions)
-
     assert len(move) == 4
     assert len(board) == 64 + 7
-    assert boardDimensions["left"] != None
-    assert boardDimensions["right"] != None
-    assert boardDimensions["top"] != None
-    assert boardDimensions["bottom"] != None
     assert len(enpassant) == 2 or enpassant == "-"
-
-    for square in coordinates:
-        assert len(square) == 2
-        assert coordinates[square]["x"] != None
-        assert coordinates[square]["y"] != None
 
     splitBoard = board.split("/")
     assert len(splitBoard) == 8
@@ -50,167 +44,129 @@ def plan(move, board, coordinates, boardDimensions, enpassant):
 
     moveFrom = squareToCoordinates(move[0:2])
     moveTo   = squareToCoordinates(move[2:4])
-    moveFromCoor = coordinates[move[0:2]]
-    moveToCoor   = coordinates[move[2:4]]
-
-    # the middle of the square where the piece will move to
-    # moveToMiddleCoor = getSquareMiddle(moveTo, boardDimensions)
-
-    actions = []
+    moveFromCoor = getSquareMiddle(moveFrom, BOARD_DIMENSIONS)
+    moveToCoor   = getSquareMiddle(moveTo, BOARD_DIMENSIONS)
 
     # SPECIAL MOVES ############################################################
 
     # castling
-    rookMove = castlingRookMove(moveFrom, moveTo, splitBoard)
-    if (rookMove != None):
+    rookMove = castlingRookMove(move)
+    piece = splitBoard[moveFrom["y"]][moveFrom["x"]]
+    if (rookMove != None and (piece == "K" or piece == "k")):
         print("Castling!")
-        rookSquare = coordinatesToSquare(rookMove["from"])
-        actions += movePiece(moveFromCoor, moveToMiddleCoor)
-        actions += movePiece(
-            coordinates[rookSquare],
-            getSquareMiddle(rookMove["to"], boardDimensions)
+        movePiece(
+            getSquareMiddle(rookMove["from"], BOARD_DIMENSIONS),
+            getSquareMiddle(rookMove["to"], BOARD_DIMENSIONS)
         )
-        actions.append("move to: off the board")
-
-        return actions
 
     # en passant
     if (move[2:4] == enpassant):
         print("En passant!")
-        if (enpassant[1] == "3"):
+        if (enpassant[1] == "3"): # 3 means it's on the top half, so the enpassant y pos will be 4
             pawnToTake = enpassant[0] + "4"
-        else:
+        else:                     # otherwise it's on the bottom half, so y pos is 5
             pawnToTake = enpassant[0] + "5"
 
-        pawnCoor = coordinates[pawnToTake]
-        actions += movePiece(moveFromCoor, moveToMiddleCoor)
-        actions += movePiece(pawnCoor, "off the board")
-        return actions
+        pawnSquare = squareToCoordinates(pawnToTake)
+        pawnCoor = getSquareMiddle(pawnSquare, BOARD_DIMENSIONS)
+        movePiece(moveFromCoor, moveToCoor)
+        killPiece(pawnCoor)
+        goIdle()
+        return
 
     # NORMAL MOVES #############################################################
 
     # if the move to square is not empty, remove the piece from there first
     if (splitBoard[moveTo["y"]][moveTo["x"]] != "*"):
         print("Taking piece!")
-        actions += movePiece(moveToCoor, "off the board")
+        killPiece(moveToCoor)
 
     # move the piece normally
     movePiece(moveFromCoor, moveToCoor)
-    # actions.append("move to: off the board")
+    goIdle()
 
-    # return actions
 
-# returns the middle of a square on a board
-def getSquareMiddle(square, boardDimensions):
-    squareSizeX = (boardDimensions["right"] - boardDimensions["left"]) / 8
-    squareSizeY = (boardDimensions["bottom"] - boardDimensions["top"]) / 8
+    x = getch.getch() = ""):
 
-    # squareSizeX = 100 / 8
-    # squareSizeY = 100 / 8
+    x = getch.getch()
 
-    # return {
-    #     "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
-    #     "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
-    # }
+    x = getch.getch()
 
-    # print(boardDimensions, square["x"] * squareSizeX)
+    x = getch.getch()
 
-    return {
-        "x": boardDimensions["left"] + square["x"] * squareSizeX + squareSizeX / 2,
-        "y": boardDimensions["top"] + square["y"] * squareSizeY + squareSizeY / 2
-    }
+    x = getch.getch()
 
-sleeptime = 0
+    x = getch.getch()
+
+    x = getch.getch()
+    print(log)
+
+    # response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
+    print((method, "http://{}:8000{}".format(HOST, endpoint), body))
+
+    print("done.")
+    time.sleep(SLEEP_TIME_BETWEEN_REQUESTS)
+    # return response.text
 
 def movePiece(moveFrom, moveTo):
 
-    print("Moving from", moveFrom, "to", moveTo)
+    print("Moving a piece from", moveFrom, "to", moveTo)
+
+    # Move to starting position at the top
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving to position...")
+
+    # Open the gripper
+    sendRequest("/gripper", body={"move": GRIPPER_OPEN}, log="opening gripper...")
+
+    # Move down to the piece
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_DOWN, log="moving down...")
+
+    # Close the gripper
+    sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
+
+    # Move gripper up with the piece
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving up...")
+
+    # Move to destination position
+    sendRequest("/position", body=moveTo, setZ=GRIPPER_UP, log="moving to destination...")
+
+    # Move down to the board
+    sendRequest("/position", body=moveTo, setZ=GRIPPER_DOWN, log="moving down...")
+
+    # Release the piece onto the board
+    sendRequest("/gripper", body={"move": GRIPPER_OPEN}, log="opening gripper...")
+
+    # Move gripper back up
+    sendRequest("/position", body=moveTo, setZ=GRIPPER_UP, log="moving up...")
+
+    # Close the gripper
+    sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
+
+# Go to idle position
+def goIdle():
+    print("Going idle.")
+    sendRequest("/position", body=IDLE_POSITION, setZ=GRIPPER_UP, log="moving to idle position...")
+
+def killPiece(moveFrom):
+
+    print("Moving a piece from", moveFrom, "to the dead zone")
     
-    # Move to starting position top
-    moveFrom["z"] = 0
-    print("moving to position...")
-    _request("POST", "/position", body=moveFrom)
-    print("done.")
-    time.sleep(sleeptime)
+    # Move to starting position at the top
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving to position...")
 
-    print("opening gripper...")
-    _request("POST", "/gripper", body={"move":GRIPPER_OPEN})
-    print("done.")
-    time.sleep(sleeptime)
+    # Open the gripper
+    sendRequest("/gripper", body={"move": GRIPPER_OPEN}, log="opening gripper...")
 
-    # Move down
-    print("moving down...")
-    moveFrom["z"] = 100
-    _request("POST", "/position", body=moveFrom)
-    print("done.")
-    time.sleep(sleeptime)
+    # Move down to the piece
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_DOWN, log="moving down...")
 
-    # Squeeze the gripper    
-    print("closing gripper...")
-    _request("POST", "/gripper", body={"move":GRIPPER_CLOSED})
-    print("done.")
-    time.sleep(sleeptime)
-    
-    # Move up
-    moveFrom["z"] = 0
-    print("moving up...")
-    _request("POST", "/position", body=moveFrom)
-    print("done.")
-    time.sleep(sleeptime)
-    
-    # Move to destination position top
-    moveTo["z"] = 0
-    print("moving to destination...")
-    _request("POST", "/position", body=moveTo)
-    print("done.")
-    time.sleep(sleeptime)
-    
-    # Move down
-    moveTo["z"] = 100
-    print("moving down...")
-    _request("POST", "/position", body=moveTo)
-    print("done.")
-    time.sleep(sleeptime)
-    
-    # Release
-    print("opening gripper...")
-    _request("POST", "/gripper", body={"move":GRIPPER_OPEN})
-    print("done.")
-    time.sleep(sleeptime)
-    
-    # Move back up
-    moveTo["z"] = 0
-    print("moving up...")
-    _request("POST", "/position", body=moveTo)
-    print("done.")
-    time.sleep(sleeptime)
+    # Close the gripper
+    sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
 
-    print("closing gripper...")
-    _request("POST", "/gripper", body={"move":GRIPPER_CLOSED})
-    print("done.")
-    time.sleep(sleeptime)
-    print("finished with move.")
+    # Move gripper up with the piece
+    sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving up...")
 
-# returns a list of all squares and their middle positions
-def allMiddleSquares(boardDimensions):
-    out = {}
-    squareSizeX = (boardDimensions["right"] - boardDimensions["left"]) / 8
-    squareSizeY = (boardDimensions["bottom"] - boardDimensions["top"]) / 8 
-    for x in range(8):
-        for y in range(8):
-            move = coordinatesToSquare({"x": x, "y": y})
-            out[move] = {
-                "y": boardDimensions["left"] + squareSizeX * x + squareSizeX / 2, 
-                "x": boardDimensions["top"] + squareSizeY * y + squareSizeY / 2
-            }
-    return out
+    # Move to destination position
+    sendRequest("/position", body=DEAD_PIECE_POSITION, setZ=GRIPPER_UP, log="moving to dead zone...")
 
-def planSimple(position):
-    return plan(
-        position,
-        "********/********/********/********/********/********/********/********",
-        None,
-        {"left": -6.25, "right": 106.25, "top": 106.25, "bottom": -6.25},
-        "-"
-    )
-
+    # TODO: need to wait for user to take the piece, then proceed
