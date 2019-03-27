@@ -85,20 +85,13 @@ def plan(
     movePiece(moveFromCoor, moveToCoor)
     goIdle()
 
+def sendRequest(endpoint, body = None, setZ = None, log = ""):
+    method = "POST"
+    
+    # for z: 0 is at the top, 100 is at the bottom
+    if (setZ != None):
+        body["z"] = setZ
 
-    x = getch.getch() = ""):
-
-    x = getch.getch()
-
-    x = getch.getch()
-
-    x = getch.getch()
-
-    x = getch.getch()
-
-    x = getch.getch()
-
-    x = getch.getch()
     print(log)
 
     # response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)

@@ -6,10 +6,9 @@ from util.planner import *
 # to represent a piece being off-centre x.51 is used, the planner will then place pieces
 # exactly at x.5
 
-print("\nNORMAL MOVE:")
+print("\nNORMAL MOVE NO PIECE TAKEN:")
 plan(
-    move="a2a4",
-    board="rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/RNBQKBNR"
+    move="a2a4"
 )
 
 print("\nTAKE PIECE:")
