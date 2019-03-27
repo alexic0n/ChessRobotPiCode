@@ -54,3 +54,9 @@ plan(
     move="e1c1",
     board="rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/R***KBNR"
 )
+
+print("\nCASTLING LEFT BOTTOM ALTERNATIVE NOTATION:")
+plan(
+    move="e1a1",
+    board="rnbqkbnr/pppppppp/********/********/********/********/PPPPPPPP/R***KBNR"
+)

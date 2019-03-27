@@ -1,5 +1,4 @@
 from util.util import *
-from util.castling import *
 import requests
 import time
 
@@ -50,14 +49,20 @@ def plan(
     # SPECIAL MOVES ############################################################
 
     # castling
-    rookMove = castlingRookMove(move)
+    rookMove, kingMove = castlingRookMove(move)
     piece = splitBoard[moveFrom["y"]][moveFrom["x"]]
     if (rookMove != None and (piece == "K" or piece == "k")):
         print("Castling!")
         movePiece(
-            getSquareMiddle(rookMove["from"], BOARD_DIMENSIONS),
-            getSquareMiddle(rookMove["to"], BOARD_DIMENSIONS)
+            getSquareMiddle(squareToCoordinates(rookMove[0:2]), BOARD_DIMENSIONS),
+            getSquareMiddle(squareToCoordinates(rookMove[2:4]), BOARD_DIMENSIONS)
         )
+        movePiece(
+            getSquareMiddle(squareToCoordinates(kingMove[0:2]), BOARD_DIMENSIONS),
+            getSquareMiddle(squareToCoordinates(kingMove[2:4]), BOARD_DIMENSIONS)
+        )
+        goIdle()
+        return
 
     # en passant
     if (move[2:4] == enpassant):
@@ -84,6 +89,14 @@ def plan(
     # move the piece normally
     movePiece(moveFromCoor, moveToCoor)
     goIdle()
+
+# given the move for the king, return the move that the rook needs to make
+def castlingRookMove(move):
+    if (move == "e8g8" or move == "e8h8"): return "h8f8", "e8g8"
+    if (move == "e8c8" or move == "e8a8"): return "a8d8", "e8c8"
+    if (move == "e1g1" or move == "e1h1"): return "h1f1", "e1g1"
+    if (move == "e1c1" or move == "e1a1"): return "a1d1", "e1c1"
+    return None, move
 
 def sendRequest(endpoint, body = None, setZ = None, log = ""):
     method = "POST"
