@@ -107,7 +107,6 @@ def speech_or_keyboard():
                             input_device_index = dev_index,input = True, \
                             frames_per_buffer=chunk)
         print("recording")
-        play_sound('sounds/beep.wav')
         frames = []
         
         # loop through stream and append audio chunks to frame array
@@ -116,7 +115,6 @@ def speech_or_keyboard():
             frames.append(data)
         
         print("finished recording")
-        play_sound('sounds/beep.wav')
         
         control = detect_keyboard()
 

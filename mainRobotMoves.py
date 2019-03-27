@@ -65,8 +65,18 @@ def text_to_speech(text):
             file.writeframes(r.content)
     
     play_sound('sounds/audio.wav')
+    
+def convertToFenWithSpaces(fen):
+       boardState = fen.split(' ')[0]
+       out = ""
+       for char in boardState:
+           if char in "12345678":
+               out += "*" * int(char)
+           else:
+               out += char
+       return out
 
-def userTurn(board, computerSide): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
+def userTurn(board, computerSide, worB): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
         print("Checkmate: Game Over!")
         play_sound('sounds/game_over.wav')
@@ -82,21 +92,49 @@ def userTurn(board, computerSide): #this basically just handles user interaction
     legalMoves = getLegalMoves(board)
     
     while(True):
-        move_str = audio_to_text(True)
+        move_str = audio_to_text(True, worB)
         
-        if (move_str in legalMoves):
-            text_to_speech("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
-            print("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
-            text = audio_to_text(False)[0]
+        if (any(move_str in move for move in legalMoves)):
+            user_move = ""
+            for move in legalMoves:
+                if move_str in move:
+                    user_move = move
+                    
+            if (len(user_move) == 5):
+                print("You want to make promotion at {}. Is this correct?".format(move_str[2:4]))
+                text_to_speech("You want to make promotion at {}. Is this correct?".format(move_str[2:4]))
+                text = audio_to_text(False, worB)[0]
+            if (move_str == 'e1g1' or move_str == 'e8g8'):
+                play_sound('sounds/next_move_kingside_castling.wav')
+                print("You want to make kingside castling. Is this correct?")
+                text = audio_to_text(False, worB)[0]
+            elif (move_str == 'e1c1' or move_str == 'e8c8'):
+                play_sound('sounds/next_move_queenside_castling.wav')
+                print("You want to make queenside castling. Is this correct?")
+                text = audio_to_text(False, worB)[0]
+            else:
+                text_to_speech("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
+                print("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
+                text = audio_to_text(False, worB)[0]
             if (text == 'n'):
                 play_sound('sounds/move_again_robot.wav')
                 print("Please press 1 again when you are ready to announce your move.")
                 waitForConfirmationInput()
             else:
+                fen_parts = board.fen().split(" ")
                 move = chess.Move.from_uci(move_str)
                 board.push(move)
                 computerSide.userTurn(move)
-                #planSimple(move_str)
+                fen = convertToFenWithSpaces(fen_parts[0])
+                print(fen)
+                enpassant = fen_parts[3]
+                plan(str(move), fen, enpassant)
+                
+                if (len(user_move) == 5):
+                    play_sound('sounds/promotion.wav')
+                    print("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.")
+                    waitForConfirmationInput()
+                
                 return True
         else:
             text_to_speech("I detected {} to {}. This is an illegal move. Please press yes again, when you are ready to announce your move.".format(move_str[0:2], move_str[2:4]))
@@ -128,7 +166,7 @@ def waitForConfirmationInput():
     else:
         return waitForConfirmationInput()
     
-def audio_to_text(recogniseMove):
+def audio_to_text(recogniseMove, worB):
     text = "Sorry, can you please repeat that?"
     
     while (text == "Sorry, can you please repeat that?"):
@@ -152,7 +190,7 @@ def audio_to_text(recogniseMove):
                             frames_per_buffer=chunk)
         
         print("recording")
-        play_sound('sounds/beep.wav')
+        play_sound('sounds/start.wav')
         
         frames = []
         
@@ -162,7 +200,7 @@ def audio_to_text(recogniseMove):
             frames.append(data)
         
         print("finished recording")
-        play_sound('sounds/beep.wav')
+        play_sound('sounds/end.wav')
         
         # stop the stream, close it, and terminate the pyaudio instantiation
         stream.stop_stream()
@@ -199,11 +237,24 @@ def audio_to_text(recogniseMove):
                 play_sound('sounds/repeat.wav')
                 print(text)
             else:
-                text = words[0] + words[2]
+                if (words[1] == 'queenside'):
+                    if (worB == 'w'):
+                        text = 'e1c1'
+                    else:
+                        text = 'e8c8'
+                else:
+                    if (words[1] == 'kingside'):
+                        if (worB == 'w'):
+                            text = 'e1g1'
+                        else:
+                            text = 'e8g8'
+                    else:
+                        text = words[0] + words[2]
     return text
     
 
 def gameplayloop(board):
+    worB = ""
     play_sound('sounds/board_clear.wav')
     print("Please confirm the board is clear before proceeding by pressing 1.")
     waitForConfirmationInput()
@@ -211,7 +262,7 @@ def gameplayloop(board):
     play_sound('sounds/mode_of_play_speech.wav')
     print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
 
-    mode = audio_to_text(False)[0].lower()
+    mode = audio_to_text(False, worB)[0].lower()
     
     mode_text_dict = {
         "e":'easy',
@@ -226,7 +277,7 @@ def gameplayloop(board):
     play_sound('sounds/white_black_speech.wav')
     print("White or black? w or b: ")
     
-    worB = audio_to_text(False)[0].lower()
+    worB = audio_to_text(False, worB)[0].lower()
     
     if not (worB == 'w' or worB == 'b'):
         worB == 'w'
@@ -256,19 +307,48 @@ def gameplayloop(board):
                 play_sound('sounds/won.wav')
                 break
             else:
+                fen_parts = board.fen().split(" ")
                 board.push(x)
-                #planSimple(str(x))
-                text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
-                print("AI makes move: {}.".format(x),"\n")
+                fen = convertToFenWithSpaces(fen_parts[0])
+                enpassant = fen_parts[3]
+                
+                if(not str(x)[-1].isdigit()):
+                    x = str(x)[0:4]
+                    
+                plan(str(x), fen, enpassant)
+                
+                if(str(x) == 'e1h1' or str(x) == 'e1g1'):
+                    play_sound('sounds/robot_kingside_castling.wav')
+                    print("I made kingside castling. Your turn!")
+                    
+                elif(str(x) == 'e1a1' or str(x) == 'e1c1'):
+                    play_sound('sounds/robot_queenside_castling.wav')
+                    print("I made queenside castling. Your turn!")
+                
+                elif(not str(x)[-1].isdigit()):
+                    prom_dict = {
+                        "q":"queen",
+                        "n":"knight",
+                        "r":"rook",
+                        "b":"bishop"
+                    }
+                    piece = str(x)[-1].lower()
+                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    
+                else:
+                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
+                    print("AI makes move: {}.".format(x),"\n")
+                
                 print(board)
-                stopNow = userTurn(board, computerSide)
+                stopNow = userTurn(board, computerSide, worB)
                 print(board)
                 if(not stopNow):
                     computerSide.endgame()
                     break
     else:
         while (True):
-            stopNow = userTurn(board, computerSide)
+            stopNow = userTurn(board, computerSide, worB)
             print(board)
             if (not stopNow):
                 computerSide.endgame()
@@ -280,10 +360,40 @@ def gameplayloop(board):
                 play_sound('sounds/won.wav')
                 break
             else:
+                fen_parts = board.fen().split(" ")
+                
+                fen = convertToFenWithSpaces(fen_parts[0])
+                enpassant = fen_parts[3]
+                
+                if(not str(x)[-1].isdigit()):
+                    x = str(x)[0:4]
+                    
+                plan(str(x), fen, enpassant)
+                
                 board.push(x)
-                #planSimple(str(x))
-                text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
-                print("AI makes move: {}.".format(x), "\n")
+                if(str(x) == 'e8h8' or str(x) == 'e8g8'):
+                    play_sound('sounds/robot_kingside_castling.wav')
+                    print("I made kingside castling. Your turn!")
+                    
+                elif(str(x) == 'e8a8' or str(x) == 'e8c8'):
+                    play_sound('sounds/robot_queenside_castling.wav')
+                    print("I made queenside castling. Your turn!")
+                
+                elif(not str(x)[-1].isdigit()):
+                    prom_dict = {
+                        "q":"queen",
+                        "n":"knight",
+                        "r":"rook",
+                        "b":"bishop"
+                    }
+                    piece = str(x)[-1].lower()
+                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    
+                else:
+                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
+                    print("AI makes move: {}.".format(x),"\n")
+                    
                 print(board)
 
 def main():

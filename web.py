@@ -67,7 +67,7 @@ def speech_recognition():
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
 
-    expected_words = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to']
+    expected_words = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling']
 
     for letter in "abcdefgh":
         for num in "12345678":
@@ -187,6 +187,10 @@ def pieces():
 
     move = empty_square + piece_position
     
+    for legal_move in valid_moves:
+        if (move in legal_move and len(legal_move) == 5):
+            move = move + 'q'
+
     piece_dict = {
         "p":"Pawn",
         "b":"Bishop",
@@ -208,4 +212,4 @@ if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
 
-    
+

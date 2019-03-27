@@ -154,27 +154,50 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
         rotateImage = data['rotateImage']
 
         if (len(data['move']) == 5):
-            if (data['move'][2] == "a"):
-                # Queenside castling
-                play_sound('sounds/queenside_castling.wav')
-                print("You have made queenside castling. Is this correct? y or n")
+            if (data['move'][-1] == 'q'):
+                # Promotion
+                move_str = data['move']
+                print("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                text_to_speech("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                
                 if (control == '2'):
                     is_correct = audio_to_text()[0].lower()
                 else:
                     is_correct = waitForConfirmationInputYesNo()
-                if (is_correct == 'n'):
-                    queenside = 'false'
-
-            if (data['move'][2] == "h"):
-                # Kingside castling
-                play_sound('sounds/kingside_castling.wav')
-                print("You have made kingside castling. Is this correct? y or n")
-                if (control == '2'):
-                    is_correct = audio_to_text()[0].lower()
-                else:
-                    is_correct = waitForConfirmationInputYesNo()
-                if (is_correct == 'n'):
-                    kingside = 'false'
+                    
+                if is_correct == 'y':
+                    play_sound('sounds/promotion.wav')
+                    print("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.")
+                    waitForConfirmationInput()
+                    
+                    print(move_str)
+                    move = chess.Move.from_uci(move_str)
+                    board.push(move)
+                    computerSide.userTurn(move)
+                    return True
+                
+            else:    
+                if (data['move'][2] == "a"):
+                    # Queenside castling
+                    play_sound('sounds/queenside_castling.wav')
+                    print("You have made queenside castling. Is this correct? y or n")
+                    if (control == '2'):
+                        is_correct = audio_to_text()[0].lower()
+                    else:
+                        is_correct = waitForConfirmationInputYesNo()
+                    if (is_correct == 'n'):
+                        queenside = 'false'
+    
+                if (data['move'][2] == "h"):
+                    # Kingside castling
+                    play_sound('sounds/kingside_castling.wav')
+                    print("You have made kingside castling. Is this correct? y or n")
+                    if (control == '2'):
+                        is_correct = audio_to_text()[0].lower()
+                    else:
+                        is_correct = waitForConfirmationInputYesNo()
+                    if (is_correct == 'n'):
+                        kingside = 'false'
 
         else:
             text_to_speech(data['status'] + ". Is this correct?")
@@ -288,6 +311,16 @@ def waitForConfirmationInput():
     else:
         return waitForConfirmationInput()
     
+def convertToFenWithSpaces(fen):
+       boardState = fen.split(' ')[0]
+       out = ""
+       for char in boardState:
+           if char in "12345678":
+               out += "*" * int(char)
+           else:
+               out += char
+       return out
+    
 def audio_to_text():    
     text = "Sorry, can you please repeat that?"
     
@@ -312,7 +345,7 @@ def audio_to_text():
                             frames_per_buffer=chunk)
         
         print("recording")
-        play_sound('sounds/beep.wav')
+        play_sound('sounds/start.wav')
         
         frames = []
         
@@ -322,7 +355,7 @@ def audio_to_text():
             frames.append(data)
         
         print("finished recording")
-        play_sound('sounds/beep.wav')
+        play_sound('sounds/end.wav')
         
         # stop the stream, close it, and terminate the pyaudio instantiation
         stream.stop_stream()
@@ -357,7 +390,7 @@ def audio_to_text():
 
 def gameplayloop(board, control):
     #Initialize camera
-    vc = cv.VideoCapture(0)
+    vc = cv.VideoCapture(1)
 
     play_sound('sounds/board_clear.wav')
     print("Please confirm the board is clear before proceeding by pressing 1.")
@@ -406,10 +439,10 @@ def gameplayloop(board, control):
         ret,image = vc.read()
         counter += 1
     
-    if (image == None):
-        play_sound('sounds/cam_not_detected.wav')
-        print("Unable to detect camera. Please unplug and plug it again.")
-        sys.exit()
+#    if (image == None):
+#        play_sound('sounds/cam_not_detected.wav')
+#        print("Unable to detect camera. Please unplug and plug it again.")
+#        sys.exit()
     
     cv.imwrite("images/image.jpg",image)
 
@@ -422,7 +455,7 @@ def gameplayloop(board, control):
         "p":7
     }
 
-    depth = mode_dict.get(mode)
+    depth = mode_dict.get(mode, 'easy')
 
     computerSide = ChessMatch(float(depth)) #set up our AI interface, initialised with a time it may process the board for
 
@@ -438,10 +471,39 @@ def gameplayloop(board, control):
                 play_sound('sounds/won.wav')
                 break
             else:
+                fen_parts = board.fen().split(" ")
                 board.push(x)
-                #planSimple(str(x))
-                text_to_speech("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
-                print("AI makes move: {}.".format(x),"\n")
+                fen = convertToFenWithSpaces(fen_parts[0])
+                enpassant = fen_parts[3]
+                
+                if(not str(x)[-1].isdigit()):
+                    x = str(x)[0:4]
+                    
+                plan(str(x), fen, enpassant)
+                
+                if(str(x) == 'e1h1' or str(x) == 'e1g1'):
+                    print("I made kingside castling. Your turn!")
+                    play_sound('sounds/robot_kingside_castling.wav')
+                    
+                elif(str(x) == 'e1a1' or str(x) == 'e1c1'):
+                    print("I made queenside castling. Your turn!")
+                    play_sound('sounds/robot_kingside_castling.wav')
+                    
+                elif(not str(x)[-1].isdigit()):
+                    prom_dict = {
+                        "q":"queen",
+                        "n":"knight",
+                        "r":"rook",
+                        "b":"bishop"
+                    }
+                    piece = str(x)[-1].lower()
+                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                  
+                else:    
+                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
+                    print("AI makes move: {}.".format(x),"\n")
+                
                 print(board)
                 stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', vc, firstImage, rotateImage, control)
                 print(board)
@@ -462,13 +524,43 @@ def gameplayloop(board, control):
                 play_sound('sounds/won.wav')
                 break
             else:
+                fen_parts = board.fen().split(" ")
                 board.push(x)
-                #planSimple(str(x))
-                text_to_speech("I moved from {} to {}. Your turn!".format(x[0:2], x[2:4]))
-                print("AI makes move: {}.".format(x), "\n")
+                fen = convertToFenWithSpaces(fen_parts[0])
+                enpassant = fen_parts[3]
+                
+                if(not str(x)[-1].isdigit()):
+                    x = str(x)[0:4]
+                    
+                plan(str(x), fen, enpassant)
+                
+                if(str(x) == 'e8h8' or str(x) == 'e8g8'):
+                    print("I made kingside castling. Your turn!")
+                    play_sound('sounds/robot_kingside_castling.wav')
+                    
+                elif(str(x) == 'e8a8' or str(x) == 'e8c8'):
+                    print("I made queenside castling. Your turn!")
+                    play_sound('sounds/robot_queenside_castling.wav')
+                    
+                elif(not str(x)[-1].isdigit()):
+                    prom_dict = {
+                        "q":"queen",
+                        "n":"knight",
+                        "r":"rook",
+                        "b":"bishop"
+                    }
+                    piece = str(x)[-1].lower()
+                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                  
+                else:    
+                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
+                    print("AI makes move: {}.".format(x), "\n")
+                
                 print(board)
 
-def main(control):
+def main():
+    control = '2'
     board = chess.Board()
     
     gameplayloop(board, control)
