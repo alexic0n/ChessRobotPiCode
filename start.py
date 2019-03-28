@@ -9,6 +9,7 @@ import requests
 import signal
 from mainUserMoves import main as main_user
 from mainRobotMoves import main as main_robot
+from dictionary import print_play, play_sound
 
 # Audio settings
 mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
@@ -42,48 +43,7 @@ def detect_keyboard():
     
     return control
 
-def play_sound(path):
-    #define stream chunk   
-    chunk = 1024  
-    
-    #open a wav format music  
-    f = wave.open(path)  
-    #instantiate PyAudio  
-    p = pyaudio.PyAudio()  
-    #open stream  
-    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
-                    channels = f.getnchannels(),  
-                    rate = f.getframerate(),  
-                    output = True)  
-    #read data  
-    data = f.readframes(chunk)  
-    
-    #play stream  
-    while data:  
-        stream.write(data)  
-        data = f.readframes(chunk)  
-    
-    #stop stream  
-    stream.stop_stream()  
-    stream.close()  
-    
-    #close PyAudio  
-    p.terminate()
-
-def text_to_speech(text):
-    r = requests.post("http://www.checkmate.tardis.ed.ac.uk/text_to_speech", files={
-            'text': text,
-        })
-
-    with wave.open('sounds/audio.wav','wb') as file:
-            file.setnchannels(1)
-            file.setsampwidth(2)
-            file.setframerate(26500)
-            file.writeframes(r.content)
-    
-    play_sound('sounds/audio.wav')
-
-def speech_or_keyboard():
+def speech_or_keyboard(lang):
     text = "Sorry, can you please repeat that?"
     count = 0
     
@@ -98,8 +58,7 @@ def speech_or_keyboard():
                 dev_index = ii 
             
         if (dev_index == -1):
-            play_sound('sounds/mic_not_detected.wav')
-            print("Unable to detect microphone. Please unplug and plug it again.")
+            print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
             sys.exit()
         
         # create pyaudio stream
@@ -137,19 +96,18 @@ def speech_or_keyboard():
         
         r = requests.post("http://www.checkmate.tardis.ed.ac.uk/speech_recognition", files={
             'user_speech': open('audio.wav', 'rb'),
+            'lang':lang
         })
     
         data = r.json()
         
         text = data['text']
         if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
-            play_sound('sounds/server_down.wav')
-            print(text)
+            print_play(text, lang)
             sys.exit()
         if (text == "Sorry, can you please repeat that?" or not(text[0]=='o' or text[0]=='t')):
             if (count == 3):
-                play_sound('sounds/unable_to_understand.wav')
-                print("Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.")
+                print_play("Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.", lang)
                 
                 control = getch.getch()
                 audio.terminate()
@@ -157,8 +115,7 @@ def speech_or_keyboard():
                     
             count = count + 1
             
-            play_sound('sounds/repeat.wav')
-            print(text)
+            print_play(text, lang)
         else:
             if (text[0] == 'o'):
                 control = '1'
@@ -166,28 +123,38 @@ def speech_or_keyboard():
                 control = '2'
             audio.terminate()
             return control
-
+        
 def main():
-    print("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make together the world of chess more exciting and fun!")
-    play_sound('sounds/welcome.wav')
+    print_play("Select language.", '')
+    lang_num = getch.getch()
     
-    print("Select or say 1 if you want to move your own pieces. Select or say 2 if you want Checkmate to move your pieces for you.")
-    play_sound('sounds/user_robot_control.wav')
+    lang_dict = {
+        "1":'en',
+        "2":'es',
+        "3":'fr',
+        "4":'de',
+        "5":'zh-cn'
+    }
+    
+    lang = lang_dict.get(lang_num, 'en')
+    
+    print_play("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!", lang)
+    
+    print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you.", lang)
 
-    control = speech_or_keyboard()
+    control = speech_or_keyboard(lang)
     
     if(control == 'q'):
         sys.exit()
     else:
         if (control == '1'):
-            play_sound('sounds/user_options.wav')  
-            print("Select or say 1 for keyboard control. Select 2 for voice control.")
-            control = speech_or_keyboard()
+            print_play("Select or say 1 for keyboard control. Select 2 for voice control.", lang)
+            control = speech_or_keyboard(lang)
             if(control == 'q'):
                 sys.exit()
-            main_user(control)
+            main_user(control, lang)
         else:
-            main_robot()
+            main_robot(lang)
 
 
 if __name__ == '__main__':

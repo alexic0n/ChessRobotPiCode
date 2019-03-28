@@ -18,6 +18,7 @@ from util.planner import *
 import requests
 import json
 from crop import crop_squares
+from dictionary import print_play, play_sound
 
 img_path = "images/image.jpg"
 
@@ -30,37 +31,10 @@ chunk = 512 # 2^12 samples for buffer
 record_secs = 4 # seconds to record
 wav_output_filename = 'audio.wav' # name of .wav file
 
-def play_sound(path):
-    #define stream chunk   
-    chunk = 1024  
-    
-    #open a wav format music  
-    f = wave.open(path)  
-    #instantiate PyAudio  
-    p = pyaudio.PyAudio()  
-    #open stream  
-    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
-                    channels = f.getnchannels(),  
-                    rate = f.getframerate(),  
-                    output = True)  
-    #read data  
-    data = f.readframes(chunk)  
-    
-    #play stream  
-    while data:  
-        stream.write(data)  
-        data = f.readframes(chunk)  
-    
-    #stop stream  
-    stream.stop_stream()  
-    stream.close()  
-    
-    #close PyAudio  
-    p.terminate()
-    
-def text_to_speech(text):
+def text_to_speech(text, lang):
     r = requests.post("http://www.checkmate.tardis.ed.ac.uk/text_to_speech", files={
             'text': text,
+            'lang': lang
         })
 
     with wave.open('sounds/audio.wav','wb') as file:
@@ -71,18 +45,14 @@ def text_to_speech(text):
     
     play_sound('sounds/audio.wav')
 
-def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, rotateImage, control): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
+def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, rotateImage, control, lang): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
-        print("Checkmate: Game Over!")
-        play_sound('sounds/game_over.wav')
+        print_play("Checkmate: Game Over!", lang)
         return False
     if(board.is_check()):
-        print("You are in check...save your king!")
-        play_sound('sounds/check.wav')
-
-    play_sound('sounds/move_user_button.wav')
+        print_play("You are in check...save your king!", lang)
         
-    print("Make your move on the board. Confirm by pressing 1.")
+    print_play("Make your move on the board. Confirm by pressing 1.", lang)
     waitForConfirmationInput()
 
     # Capture image
@@ -157,17 +127,28 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
             if (data['move'][-1] == 'q'):
                 # Promotion
                 move_str = data['move']
-                print("You made promotion at {}. Is this correct?".format(move_str[2:4]))
-                text_to_speech("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                if (lang == 'en'):
+                    print("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                    text_to_speech("You made promotion at {}. Is this correct?".format(move_str[2:4]), lang)
+                if (lang == 'es'):
+                    pass
+                if (lang == 'fr'):
+                    pass
+                if (lang == 'de'):
+                    print("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                    text_to_speech("Sie haben eine Umwandlung auf {} gemacht, ist das richtig?".format(move_str[2:4]), lang)
+                if (lang == 'zh-cn'):
+                    print("You made promotion at {}. Is this correct?".format(move_str[2:4]))
+                    text_to_speech("您是否升变了{}?".format(move_str[2:4]), lang)
+                    
                 
                 if (control == '2'):
-                    is_correct = audio_to_text()[0].lower()
+                    is_correct = audio_to_text(lang)[0].lower()
                 else:
                     is_correct = waitForConfirmationInputYesNo()
                     
                 if is_correct == 'y':
-                    play_sound('sounds/promotion.wav')
-                    print("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.")
+                    print_play("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.", lang)
                     waitForConfirmationInput()
                     
                     print(move_str)
@@ -179,10 +160,9 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
             else:    
                 if (data['move'][2] == "a"):
                     # Queenside castling
-                    play_sound('sounds/queenside_castling.wav')
-                    print("You have made queenside castling. Is this correct? y or n")
+                    print_play("You have made queenside castling. Is this correct? y or n", lang)
                     if (control == '2'):
-                        is_correct = audio_to_text()[0].lower()
+                        is_correct = audio_to_text(lang)[0].lower()
                     else:
                         is_correct = waitForConfirmationInputYesNo()
                     if (is_correct == 'n'):
@@ -190,20 +170,31 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
     
                 if (data['move'][2] == "h"):
                     # Kingside castling
-                    play_sound('sounds/kingside_castling.wav')
-                    print("You have made kingside castling. Is this correct? y or n")
+                    print_play("You have made kingside castling. Is this correct? y or n", lang)
                     if (control == '2'):
-                        is_correct = audio_to_text()[0].lower()
+                        is_correct = audio_to_text(lang)[0].lower()
                     else:
                         is_correct = waitForConfirmationInputYesNo()
                     if (is_correct == 'n'):
                         kingside = 'false'
 
         else:
-            text_to_speech(data['status'] + ". Is this correct?")
-            print(data['status'] + ". Is this correct? y or n")
+            if (lang == 'en'):
+                text_to_speech(data['status'] + ". Is this correct?", lang)
+                print(data['status'] + ". Is this correct? y or n")
+            if (lang == 'es'):
+                pass
+            if (lang == 'fr'):
+                pass
+            if (lang == 'de'):
+                text_to_speech(data['status'] + ". Ist das richtig?", lang)
+                print(data['status'] + ". Is this correct? y or n")
+            if (lang == 'zh-cn'):
+                text_to_speech(data['status'] + "。对吗？", lang)
+                print(data['status'] + ". Is this correct? y or n")
+                
             if (control == '2'):
-                is_correct = audio_to_text()[0].lower()
+                is_correct = audio_to_text(lang)[0].lower()
             else:
                 is_correct = waitForConfirmationInputYesNo()
 
@@ -224,13 +215,43 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
             if not originKnown:
                 status_list = data['status'].split(" ")
                 piece = status_list[0]
+                dict_piece_de = {
+                    'Pawn':'Bauer',
+                    'Bishop':'Läufer',
+                    'Rook':'Turm',
+                    'Queen':'Dame',
+                    'King':'König',
+                    'Knight':'Springer'
+                }
+                
+                dict_piece_zh_cn = {
+                    'Pawn':'士兵',
+                    'Bishop':'主教',
+                    'Rook':'城堡',
+                    'Queen':'王后',
+                    'King':'国王',
+                    'Knight':'骑士'
+                }
+                
                 origin = status_list[3]
                 if not (len(data['move']) == 5):
-                    text_to_speech("Have you moved a {} from {}?".format(piece, origin))
-                    print("Have you moved a {} from {}? y or n".format(piece, origin))
+                    if (lang == 'en'):
+                        text_to_speech("Have you moved a {} from {}?".format(piece, origin), lang)
+                        print("Have you moved a {} from {}? y or n".format(piece, origin))
+                    if (lang == 'es'):
+                        pass
+                    if (lang == 'fr'):
+                        pass
+                    if (lang == 'de'):
+                        text_to_speech("Haben Sie {} von {} verschoben?".format(dict_piece_de.get(piece), origin), lang)
+                        print("Have you moved a {} from {}? y or n".format(piece, origin))
+                    if (lang == 'zh-cn'):
+                        text_to_speech("您是否刚刚移动了{} 上的{}".format(origin, piece), lang)
+                        print("Have you moved a {} from {}? y or n".format(dict_piece_zh_cn.get(piece), origin))
+                
                     
                     if (control == '2'):
-                        is_origin = audio_to_text()[0].lower()
+                        is_origin = audio_to_text(lang)[0].lower()
                     else:
                         is_origin = waitForConfirmationInputYesNo()
                         
@@ -240,19 +261,16 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
                     else:
                         incorrect_count = incorrect_count + 1
                         if incorrect_count == 2:
-                            play_sound('sounds/legal_move.wav')
-                            print('Are you sure that you made a legal move? y or n')
+                            print_play('Are you sure that you made a legal move? y or n', lang)
                             if (control == '2'):
-                                is_legal = audio_to_text()[0].lower()
+                                is_legal = audio_to_text(lang)[0].lower()
                             else:
                                 is_legal = waitForConfirmationInputYesNo()
 
                             if is_legal == 'y':
                                 probability_rank = str(int(data['probability_rank']) + 1)
                             else:
-                                play_sound('sound/move_again_user.wav')
-              
-                                print("Please make a new move. Press 1 to confirm.")
+                                print_play("Please make a new move. Press 1 to confirm.", lang)
                                 waitForConfirmationInput()
                                 originKnown = False
                                 incorrect_count = 0
@@ -273,8 +291,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
                 currentLegalMoves = [move for move in currentLegalMoves if not move == data['move']]
 
         if (len(currentLegalMoves) == 0):
-            play_sound('sounds/invalid_move.wav')
-            print("Your move is invalid. Please make a new move and confirm it by pressing 1.")
+            print_play("Your move is invalid. Please make a new move and confirm it by pressing 1.", lang)
             waitForConfirmationInput()
             incorrect_count = 0
             originKnown = False
@@ -321,7 +338,7 @@ def convertToFenWithSpaces(fen):
                out += char
        return out
     
-def audio_to_text():    
+def audio_to_text(lang):    
     text = "Sorry, can you please repeat that?"
     
     while (text == "Sorry, can you please repeat that?"):
@@ -335,8 +352,7 @@ def audio_to_text():
                 dev_index = ii 
             
         if (dev_index == -1):
-            play_sound('sounds/mic_not_detected.wav')
-            print("Unable to detect microphone. Please unplug and plug it again.")
+            print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
             sys.exit()
         
         # create pyaudio stream
@@ -372,66 +388,83 @@ def audio_to_text():
         
         r = requests.post("http://www.checkmate.tardis.ed.ac.uk/speech_recognition", files={
             'user_speech': open('audio.wav', 'rb'),
+            'lang': lang
         })
         
         data = r.json()
         
         text = data['text']
         if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
-            play_sound('sounds/server_down.wav')
-            print(text)
+            print_play(text, lang)
             sys.exit()
         if (text == "Sorry, can you please repeat that?"):
-            play_sound('sounds/repeat.wav')
-            print(text)
+            print_play(text, lang)
     
     return text
     
 
-def gameplayloop(board, control):
+def gameplayloop(board, control, lang):
     #Initialize camera
     vc = cv.VideoCapture(1)
 
-    play_sound('sounds/board_clear.wav')
-    print("Please confirm the board is clear before proceeding by pressing 1.")
+    print_play("Please confirm the board is clear before proceeding by pressing 1.", lang)
     waitForConfirmationInput()
 
-    print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
-    
+    print_play(control + '.' + "Select mode of play (e for easy, m for moderate, h for hard, p for pro):", lang)
     if (control == '2'):
-        play_sound('sounds/mode_of_play_speech.wav')
-        mode = audio_to_text()[0].lower()
+        mode = audio_to_text(lang)[0].lower()
     else:
-        play_sound('sounds/mode_of_play_button.wav')
         mode = getch.getch()
         
-    mode_text_dict = {
+    mode_text_dict_en = {
         "e":'easy',
         "m":'moderate',
         "h":'hard',
         "p":'pro'
     }
     
-    text_to_speech("You have selected {} mode.".format(mode_text_dict.get(mode, 'easy')))
-    print("You have selected {} mode.".format(mode_text_dict.get(mode, 'easy')))
+    mode_text_dict_de = {
+        "e":'einfachen',
+        "m":'mittleren',
+        "h":'harten',
+        "p":'Pro-Modus'
+    }
+    
+    mode_text_dict_zh_cn = {
+        "e":'简单',
+        "m":'中等',
+        "h":'困难',
+        "p":'专家'
+    }
+    
+    
+    if (lang == 'en'):
+        text_to_speech("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')), lang)
+        print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
+    if (lang == 'es'):
+        pass
+    if (lang == 'fr'):
+        pass
+    if (lang == 'de'):
+        text_to_speech("Sie haben den {} ausgewählt.".format(mode_text_dict_de.get(mode, 'einfachen')), lang)
+        print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
+    if (lang == 'zh-cn'):
+        text_to_speech("您选择了{} 模式。".format(mode_text_dict_zh_cn.get(mode, '简单')), lang)
+        print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
 
-    print("White or black? w or b: ")
+    print_play(control + '.' + "White or black? w or b: ", lang)
     
     if (control == '2'):
-        play_sound('sounds/white_black_speech.wav')
-        worB = audio_to_text()[0].lower()
+        worB = audio_to_text(lang)[0].lower()
     else:
-        play_sound('sounds/white_black_button.wav')
         worB = getch.getch()
         
     if not (worB == 'w' or worB == 'b'):
         worB == 'w'
     if (worB == 'w'):
-        play_sound('sounds/white.wav')
-        print("You have selected white.")
+        print_play("You have selected white.", lang)
     else:
-        play_sound('sounds/black.wav') 
-        print("You have selected black.")
+        print_play("You have selected black.", lang)
 
     # Capture image
     counter = 0
@@ -461,14 +494,34 @@ def gameplayloop(board, control):
 
     firstImage = 'true'
     rotateImage = 'false'
+    
+    prom_dict_en = {
+        "q":"queen",
+        "n":"knight",
+        "r":"rook",
+        "b":"bishop"
+    }
+    
+    prom_dict_de = {
+        "q":"Dame",
+        "n":"Springer",
+        "r":"Turm",
+        "b":"Läufer"
+    }
+    
+    prom_dict_zh_cn = {
+        "q":"王后",
+        "n":"骑士",
+        "r":"城堡",
+        "b":"主教"
+    }
 
     if(worB == 'b'): #run the game recursively until the user quits or checkmate is achieved
         while(True):
             x = computerSide.aiTurn() #obtain the move the ai would make
 
             if (x == None):
-                print("Congratulations! You won the game.")
-                play_sound('sounds/won.wav')
+                print_play("Congratulations! You won the game.", lang)
                 break
             else:
                 fen_parts = board.fen().split(" ")
@@ -482,37 +535,51 @@ def gameplayloop(board, control):
                 plan(str(x), fen, enpassant)
                 
                 if(str(x) == 'e1h1' or str(x) == 'e1g1'):
-                    print("I made kingside castling. Your turn!")
-                    play_sound('sounds/robot_kingside_castling.wav')
+                    print_play("I made kingside castling. Your turn!", lang)
                     
                 elif(str(x) == 'e1a1' or str(x) == 'e1c1'):
-                    print("I made queenside castling. Your turn!")
-                    play_sound('sounds/robot_kingside_castling.wav')
+                    print_play("I made queenside castling. Your turn!", lang)
                     
                 elif(not str(x)[-1].isdigit()):
-                    prom_dict = {
-                        "q":"queen",
-                        "n":"knight",
-                        "r":"rook",
-                        "b":"bishop"
-                    }
                     piece = str(x)[-1].lower()
-                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
-                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    if (lang == 'en'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)), lang)
+                    if (lang == 'es'):
+                        pass
+                    if (lang == 'fr'):
+                        pass
+                    if (lang == 'de'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("Ich habe eine Umwandlung auf {} gemacht. Du bist dran!".format(prom_dict_de.get(piece)), lang)
+                    if (lang == 'zh-cn'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("I made {} promotion. Your turn!".format(prom_dict_zh_cn.get(piece)), lang)
                   
                 else:    
-                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
-                    print("AI makes move: {}.".format(x),"\n")
+                    if (lang == 'en'):
+                        text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
+                    if (lang == 'es'):
+                        pass
+                    if (lang == 'fr'):
+                        pass
+                    if (lang == 'de'):
+                        text_to_speech("Ich bin von {} nach {} gezogen. Du bist dran.".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
+                    if (lang == 'zh-cn'):
+                        text_to_speech("我从{}移动到{}，到你了。".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
                 
                 print(board)
-                stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', vc, firstImage, rotateImage, control)
+                stopNow = userTurn(board, computerSide, topleft, bottomright, 'b', vc, firstImage, rotateImage, control, lang)
                 print(board)
                 if(not stopNow):
                     computerSide.endgame()
                     break
     else:
         while (True):
-            stopNow = userTurn(board, computerSide, topleft, bottomright, 'w', vc, firstImage, rotateImage, control)
+            stopNow = userTurn(board, computerSide, topleft, bottomright, 'w', vc, firstImage, rotateImage, control, lang)
             print(board)
             if (not stopNow):
                 computerSide.endgame()
@@ -520,8 +587,7 @@ def gameplayloop(board, control):
             x = computerSide.aiTurn()
 
             if (x == None):
-                print("Congratulations! You won the game.")
-                play_sound('sounds/won.wav')
+                print_play("Congratulations! You won the game.", lang)
                 break
             else:
                 fen_parts = board.fen().split(" ")
@@ -535,35 +601,48 @@ def gameplayloop(board, control):
                 plan(str(x), fen, enpassant)
                 
                 if(str(x) == 'e8h8' or str(x) == 'e8g8'):
-                    print("I made kingside castling. Your turn!")
-                    play_sound('sounds/robot_kingside_castling.wav')
+                    print_play("I made kingside castling. Your turn!", lang)
                     
                 elif(str(x) == 'e8a8' or str(x) == 'e8c8'):
-                    print("I made queenside castling. Your turn!")
-                    play_sound('sounds/robot_queenside_castling.wav')
+                    print_play("I made queenside castling. Your turn!", lang)
                     
                 elif(not str(x)[-1].isdigit()):
-                    prom_dict = {
-                        "q":"queen",
-                        "n":"knight",
-                        "r":"rook",
-                        "b":"bishop"
-                    }
                     piece = str(x)[-1].lower()
-                    print("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
-                    text_to_speech("I made {} promotion. Your turn!".format(prom_dict.get(piece)))
+                    if (lang == 'en'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)), lang)
+                    if (lang == 'es'):
+                        pass
+                    if (lang == 'fr'):
+                        pass
+                    if (lang == 'de'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("Ich habe eine Umwandlung auf {} gemacht. Du bist dran!".format(prom_dict_de.get(piece)), lang)
+                    if (lang == 'zh-cn'):
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("I made {} promotion. Your turn!".format(prom_dict_zh_cn.get(piece)), lang)
                   
                 else:    
-                    text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]))
-                    print("AI makes move: {}.".format(x), "\n")
+                    if (lang == 'en'):
+                        text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
+                    if (lang == 'es'):
+                        pass
+                    if (lang == 'fr'):
+                        pass
+                    if (lang == 'de'):
+                        text_to_speech("Ich bin von {} nach {} gezogen. Du bist dran.".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
+                    if (lang == 'zh-cn'):
+                        text_to_speech("我从{}移动到{}，到你了。".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
                 
                 print(board)
 
-def main():
-    control = '2'
+def main(control, lang):
     board = chess.Board()
     
-    gameplayloop(board, control)
+    gameplayloop(board, control, lang)
 
 if __name__ == '__main__':
     main()

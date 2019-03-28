@@ -35,11 +35,12 @@ def index():
 
 @app.route('/text_to_speech', methods=['POST'])
 def text_to_speech():
-    if not (request.files['text']):
+    if not (request.files['text'] and request.files['lang']):
         abort('401')
     
     text = request.files['text'].read().decode()
-    speech = gTTS(text=text, lang='en')
+    lang = request.files['lang'].read().decode()
+    speech = gTTS(text=text, lang=lang)
     speech.save('text_to_speech.mp3')
 
     speech = AudioSegment.from_mp3('text_to_speech.mp3')
@@ -53,11 +54,23 @@ def text_to_speech():
 
 @app.route('/speech_recognition', methods=['POST'])
 def speech_recognition():
-    if not (request.files['user_speech']):
+    if not (request.files['user_speech'] and request.files['lang']):
         abort('401')
     storage_path = os.path.join(app_root)
     audio_path = os.path.join(storage_path, 'audio.wav')
     request.files['user_speech'].save(audio_path)
+
+    lang_code = request.files['lang'].read().decode()
+
+    lang_dict = {
+        'en':'en-GB',
+        'es':'es-ES',
+        'fr':'fr-FR',
+        'de':'de-DE',
+        'zh-cn':'zh'
+    }
+
+    lang = lang_dict.get(lang_code, 'en-GB')
 
     with open ('Checkmate.json', 'r') as file:
         credential = file.read ()
@@ -66,28 +79,128 @@ def speech_recognition():
 
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
+    expected_words_en = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling']
+    expected_words_es = []
+    expected_words_fr = []
+    expected_words_de = ['eins', 'zwei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', ' ', 'mache', 'kurze', 'lange', 'Rochade' ]
+    expected_words_zh_cn = ['一', '二', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
 
-    expected_words = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling']
-
+    squares = []
     for letter in "abcdefgh":
         for num in "12345678":
             square = letter + num
-            expected_words.append(square)
+            squares.append(square)
+        if (lang_code == 'zh-cn'):
+            for num in "一二三四五六七八":
+                square = letter + num
+                squares.append(square)
 
-    expected_mistakes = ['yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
+    if(lang_code == 'en'):
+        expected_words = expected_words_en
+    if(lang_code == 'es'):
+        expected_words = expected_words_es
+    if(lang_code == 'fr'):
+        expected_words = expected_words_fr
+    if(lang_code == 'de'):
+        expected_words = expected_words_de
+    if(lang_code == 'zh-cn'):
+        expected_words = expected_words_zh_cn
+
+    if(lang_code == 'en'):
+        expected_mistakes = ['yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
+    if(lang_code == 'es'):
+        expected_mistakes = []
+    if(lang_code == 'fr'):
+        expected_mistakes = []
+    if(lang_code == 'de'):
+        expected_mistakes = []
+    if(lang_code == 'zh-cn'):
+        expected_mistakes = []
 
     try:
-        text = r.recognize_google_cloud (audio, language = "en-us", credentials_json = credential, preferred_phrases = expected_words+expected_mistakes).lower()
+        text = r.recognize_google_cloud (audio, language = lang, credentials_json = credential, preferred_phrases = expected_words+squares+expected_mistakes).lower()
         print(text)
         words = text.split(" ")
         print(words)
-        if (len(words) == 4):
-            if (words[0] in expected_words and words[1] in expected_words and words[2] in expected_words):
-                 return json.dumps({'text':text})
+        if(lang_code == 'en'):
+            if('castling' in words):
+                if ('queenside' in words):
+                    return json.dumps({'text':'make queenside castling '})
+                if('kingside' in words):
+                    return json.dumps({'text':'make kingside castling '})
+        if(lang_code == 'es'):
+            if('castling' in words):
+                if ('queenside' in words):
+                    return json.dumps({'text':'make queenside castling '})
+                if('kingside' in words):
+                    return json.dumps({'text':'make kingside castling '})
+        if(lang_code == 'fr'):
+            if('castling' in words):
+                if ('queenside' in words):
+                    return json.dumps({'text':'make queenside castling '})
+                if('kingside' in words):
+                    return json.dumps({'text':'make kingside castling '})
+        if(lang_code == 'de'):
+            if('rochade' in words):
+                if ('lange' in words):
+                    return json.dumps({'text':'make queenside castling '})
+                if('kurze' in words):
+                    return json.dumps({'text':'make kingside castling '})
+        if(lang_code == 'zh-cn'):
+            if('后翼易位' in text or '后1亿位' in text):
+                return json.dumps({'text':'make queenside castling '})
+            if ('王翼易位' in text or '王1亿位' in text):
+                return json.dumps({'text':'make kingside castling '})
+
+        if (lang_code == 'zh-cn'):
+            square_origin = " "
+            square_dest = " "
+
+            ind = 0
+            while (ind<len(text)-1):
+                letter = text[ind]
+                if (letter == '1'):
+                    letter = 'e'
+                digit = text[ind+1]
+
+                if(digit == '一'):
+                    digit = '1'
+                if(digit == '二'):
+                    digit = '2'
+                if(digit == '三'):
+                    digit = '3'
+                if(digit == '四'):
+                    digit = '4'
+                if(digit == '五'):
+                    digit = '5'
+                if(digit == '六'):
+                    digit = '6'
+                if(digit == '七'):
+                    digit = '7'
+                if(digit == '八' or digit == '吧'):
+                    digit = '8'
+
+                if ((letter + digit) in squares):
+                    if (square_origin == " "):
+                        square_origin = letter + digit
+                    else: 
+                        square_dest = letter + digit
+                        break
+                ind = ind + 1
+
+            if (not square_origin == " " and not square_dest == " "):
+                print('Test')
+                return json.dumps({'text':square_origin + " to " + square_dest + " "})
+
+        if (not lang_code == 'zh-cn' and len(words) >= 4 and words[0] in squares and words[2] in squares):
+            return json.dumps({'text':words[0] + " to " + words[2] + " "})
+
+        word_index = 0
         for word in (expected_words+expected_mistakes):
              if (word in text):
                  print ("Google Cloud Speech Recognition thinks you said: " + word)
-                 return json.dumps({'text':word})
+                 return json.dumps({'text':expected_words_en[word_index]})
+             word_index = word_index + 1
         return json.dumps({'text':"Sorry, can you please repeat that?"})
     except sr.UnknownValueError:
         return json.dumps({'text':"Sorry, can you please repeat that?"})
@@ -136,6 +249,7 @@ def pieces():
             image = image.resize((pixels, pixels), Image.ANTIALIAS)
             image = np.array(image)
             data.append(image)
+        data = np.array(data)
 
         predictions = model.predict(data)
 
@@ -211,5 +325,3 @@ def pieces():
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)
-
-
