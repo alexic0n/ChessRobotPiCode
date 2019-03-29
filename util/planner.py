@@ -1,6 +1,11 @@
+import sys
 from util.util import *
 import requests
 import time
+import wave
+import getch
+sys.path.append("../")
+from dictionary import print_play, play_sound
 
 HOST = "192.168.105.110"
 GRIPPER_OPEN = 700
@@ -23,12 +28,36 @@ BOARD_DIMENSIONS = {
     "bottom": 107
 }
 
+def text_to_speech(text, lang):
+    r = requests.post("http://www.checkmate.tardis.ed.ac.uk/text_to_speech", files={
+            'text': text,
+            'lang': lang
+        })
+
+    with wave.open('sounds/audio.wav','wb') as file:
+            file.setnchannels(1)
+            file.setsampwidth(2)
+            file.setframerate(26500)
+            file.writeframes(r.content)
+    
+    play_sound('sounds/audio.wav')
+    
+def waitForConfirmationInput():
+    confirmed = getch.getch()
+    if(confirmed == '1'):
+        return True
+    elif(confirmed =='q'):
+        sys.exit()
+    else:
+        return waitForConfirmationInput()
+
 def plan(
     move, # a 4 length string move
+    lang,
     board="********/********/********/********/********/********/********/********",
             # the FEN notation with * for the state of the board
-    enpassant="-" # the 2 length square string which is en passant
-    ):
+    enpassant="-"): # the 2 length square string which is en passant
+    
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
     # print("Board dimensions:", boardDimensions)
     # print("Board:", board)
@@ -84,7 +113,7 @@ def plan(
     # if the move to square is not empty, remove the piece from there first
     if (splitBoard[moveTo["y"]][moveTo["x"]] != "*"):
         print("Taking piece!")
-        killPiece(moveToCoor)
+        killPiece(moveToCoor, lang)
 
     # move the piece normally
     movePiece(moveFromCoor, moveToCoor)
@@ -153,9 +182,12 @@ def goIdle():
     print("Going idle.")
     sendRequest("/position", body=IDLE_POSITION, setZ=GRIPPER_UP, log="moving to idle position...")
 
-def killPiece(moveFrom):
+def killPiece(moveFrom, lang):
 
     print("Moving a piece from", moveFrom, "to the dead zone")
+    text_to_speech("Piece taken! Please remove it from the gripper and press yes.", lang)
+    
+    waitForConfirmationInput()
     
     # Move to starting position at the top
     sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving to position...")

@@ -12,6 +12,7 @@ import wave
 sys.path.append("./")
 from classes.aiInterface import *
 from util.util import *
+from util.storeMoves import storeMoves
 from util.planner import *
 import requests
 import json
@@ -50,9 +51,10 @@ def convertToFenWithSpaces(fen):
                out += char
        return out
 
-def userTurn(board, computerSide, worB, lang): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
+def userTurn(board, computerSide, worB, lang, storeMovesList): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
         print_play("Checkmate: Game Over!", lang)
+        storeMovesList.save()
         return False
     if(board.is_check()):
         print_play("You are in check...save your king!", lang)
@@ -78,7 +80,8 @@ def userTurn(board, computerSide, worB, lang): #this basically just handles user
                 if (lang == 'es'):
                     pass
                 if (lang == 'fr'):
-                    pass
+                    print("You want to make promotion at {}. Is this correct?".format(move_str[2:4]))
+                    text_to_speech("Vous voulez faire de la promotion en {}. Est-ce correct?".format(move_str[2:4]), lang)
                 if (lang == 'de'):
                     print("You want to make promotion at {}. Is this correct?".format(move_str[2:4]))
                     text_to_speech("Möchten Sie eine Umwandlung auf {} machen?".format(move_str[2:4]), lang)
@@ -100,7 +103,8 @@ def userTurn(board, computerSide, worB, lang): #this basically just handles user
                 if (lang == 'es'):
                     pass
                 if (lang == 'fr'):
-                    pass
+                    text_to_speech("J'ai détecté {} à {}. Est-ce correct?".format(move_str[0:2], move_str[2:4]), lang)
+                    print("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
                 if (lang == 'de'):
                     text_to_speech("Ich habe {} zu {} erkannt. Ist das richtig?".format(move_str[0:2], move_str[2:4]), lang)
                     print("I detected {} to {}. Is this correct?".format(move_str[0:2], move_str[2:4]))
@@ -116,15 +120,19 @@ def userTurn(board, computerSide, worB, lang): #this basically just handles user
                 fen_parts = board.fen().split(" ")
                 move = chess.Move.from_uci(move_str)
                 board.push(move)
+                
                 computerSide.userTurn(move)
                 fen = convertToFenWithSpaces(fen_parts[0])
                 print(fen)
                 enpassant = fen_parts[3]
-                plan(str(move), fen, enpassant)
+                plan(str(move), lang, fen, enpassant)
                 
                 if (len(user_move) == 5):
                     print_play("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.", lang)
                     waitForConfirmationInput()
+                
+                # Store the move
+                storeMovesList.add(move_str)
                 
                 return True
         else:
@@ -134,7 +142,8 @@ def userTurn(board, computerSide, worB, lang): #this basically just handles user
             if (lang == 'es'):
                 pass
             if (lang == 'fr'):
-                pass
+                text_to_speech("J'ai détecté {} à {}. Ceci est un coup illégal. Veuillez appuyer à nouveau sur oui, lorsque vous êtes prêt à annoncer votre coup.".format(move_str[0:2], move_str[2:4]), lang)
+                print("I detected {} to {}. This is an illegal move. Please press 1 again when you are ready to announce your move.".format(move_str[0:2], move_str[2:4]))
             if (lang == 'de'):
                 text_to_speech("Ich habe {} zu {} erkannt. Dies ist ein illegaler Schritt. Bitte drücken Sie erneut Ja, wenn Sie Ihren Schachzug ankündigen möchten.".format(move_str[0:2], move_str[2:4]), lang)
                 print("I detected {} to {}. This is an illegal move. Please press 1 again when you are ready to announce your move.".format(move_str[0:2], move_str[2:4]))
@@ -256,6 +265,7 @@ def audio_to_text(recogniseMove, worB, lang):
 
 def gameplayloop(board, lang):
     worB = ""
+    storeMovesList = storeMoves()
     print_play("Please confirm the board is clear before proceeding by pressing 1.", lang)
     waitForConfirmationInput()
 
@@ -267,6 +277,13 @@ def gameplayloop(board, lang):
         "e":'easy',
         "m":'moderate',
         "h":'hard',
+        "p":'pro'
+    }
+    
+    mode_text_dict_fr = {
+        "e":'facile',
+        "m":'modéré',
+        "h":'difficile',
         "p":'pro'
     }
     
@@ -291,7 +308,8 @@ def gameplayloop(board, lang):
     if (lang == 'es'):
         pass
     if (lang == 'fr'):
-        pass
+        text_to_speech("Vous avez sélectionné le mode {}.".format(mode_text_dict_fr.get(mode, 'facile')), lang)
+        print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
     if (lang == 'de'):
         text_to_speech("Sie haben den {} ausgewählt.".format(mode_text_dict_de.get(mode, 'einfachen')), lang)
         print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
@@ -307,8 +325,11 @@ def gameplayloop(board, lang):
         worB == 'w'
     if (worB == 'w'):
         print_play("You have selected white.", lang)
+        
     else:
         print_play("You have selected black.", lang)
+        
+    storeMovesList.add('user:' + worB)
 
     mode_dict = {
         "e":1,
@@ -325,6 +346,13 @@ def gameplayloop(board, lang):
         "n":"knight",
         "r":"rook",
         "b":"bishop"
+    }
+    
+    prom_dict_fr = {
+        "q":"dame",
+        "n":"cavalier",
+        "r":"tour",
+        "b":"fou"
     }
     
     prom_dict_de = {
@@ -347,6 +375,7 @@ def gameplayloop(board, lang):
 
             if (x == None):
                 print_play("Congratulations! You won the game.", lang)
+                storeMovesList.save()
                 break
             else:
                 fen_parts = board.fen().split(" ")
@@ -354,10 +383,13 @@ def gameplayloop(board, lang):
                 fen = convertToFenWithSpaces(fen_parts[0])
                 enpassant = fen_parts[3]
                 
+                # Store move
+                storeMovesList.add(str(x))
+                
                 if(not str(x)[-1].isdigit()):
                     x = str(x)[0:4]
                     
-                plan(str(x), fen, enpassant)
+                plan(str(x), lang, fen, enpassant)
                 
                 if(str(x) == 'e1h1' or str(x) == 'e1g1'):
                     print_play("I made kingside castling. Your turn!", lang)
@@ -373,7 +405,8 @@ def gameplayloop(board, lang):
                     if (lang == 'es'):
                         pass
                     if (lang == 'fr'):
-                        pass
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("J'ai fait la promotion de la {}. À votre tour!".format(prom_dict_fr.get(piece)), lang)
                     if (lang == 'de'):
                         print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
                         text_to_speech("Ich habe eine Umwandlung auf {} gemacht. Du bist dran!".format(prom_dict_de.get(piece)), lang)
@@ -388,7 +421,8 @@ def gameplayloop(board, lang):
                     if (lang == 'es'):
                         pass
                     if (lang == 'fr'):
-                        pass
+                        text_to_speech("Je me suis déplacé de {} à {}. À votre tour!".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
                     if (lang == 'de'):
                         text_to_speech("Ich bin von {} nach {} gezogen. Du bist dran.".format(str(x)[0:2], str(x)[2:4]), lang)
                         print("AI makes move: {}.".format(x),"\n")
@@ -397,14 +431,14 @@ def gameplayloop(board, lang):
                         print("AI makes move: {}.".format(x),"\n")
                 
                 print(board)
-                stopNow = userTurn(board, computerSide, worB, lang)
+                stopNow = userTurn(board, computerSide, worB, lang, storeMovesList)
                 print(board)
                 if(not stopNow):
                     computerSide.endgame()
                     break
     else:
         while (True):
-            stopNow = userTurn(board, computerSide, worB, lang)
+            stopNow = userTurn(board, computerSide, worB, lang, storeMovesList)
             print(board)
             if (not stopNow):
                 computerSide.endgame()
@@ -413,6 +447,7 @@ def gameplayloop(board, lang):
 
             if (x == None):
                 print_play("Congratulations! You won the game.", lang)
+                storeMovesList.save()
                 break
             else:
                 fen_parts = board.fen().split(" ")
@@ -423,9 +458,13 @@ def gameplayloop(board, lang):
                 if(not str(x)[-1].isdigit()):
                     x = str(x)[0:4]
                     
-                plan(str(x), fen, enpassant)
+                plan(str(x), lang, fen, enpassant)
                 
                 board.push(x)
+                
+                # Store move 
+                storeMovesList.add(str(x))
+                
                 if(str(x) == 'e8h8' or str(x) == 'e8g8'):
                     print_play("I made kingside castling. Your turn!", lang)
                     
@@ -440,7 +479,8 @@ def gameplayloop(board, lang):
                     if (lang == 'es'):
                         pass
                     if (lang == 'fr'):
-                        pass
+                        print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
+                        text_to_speech("J'ai fait la promotion de la {}. À votre tour!".format(prom_dict_fr.get(piece)), lang)
                     if (lang == 'de'):
                         print("I made {} promotion. Your turn!".format(prom_dict_en.get(piece)))
                         text_to_speech("Ich habe eine Umwandlung auf {} gemacht. Du bist dran!".format(prom_dict_de.get(piece)), lang)
@@ -455,7 +495,8 @@ def gameplayloop(board, lang):
                     if (lang == 'es'):
                         pass
                     if (lang == 'fr'):
-                        pass
+                        text_to_speech("Je me suis déplacé de {} à {}. À votre tour!".format(str(x)[0:2], str(x)[2:4]), lang)
+                        print("AI makes move: {}.".format(x),"\n")
                     if (lang == 'de'):
                         text_to_speech("Ich bin von {} nach {} gezogen. Du bist dran.".format(str(x)[0:2], str(x)[2:4]), lang)
                         print("AI makes move: {}.".format(x),"\n")

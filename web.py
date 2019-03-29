@@ -79,11 +79,11 @@ def speech_recognition():
 
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
-    expected_words_en = ['one', 'two', 'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling']
+    expected_words_en = ['one', 'two', 'three','yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling', 'yeah', 'yep', 'nope', 'wide', 'heart', 'heard$
     expected_words_es = []
-    expected_words_fr = []
-    expected_words_de = ['eins', 'zwei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', ' ', 'mache', 'kurze', 'lange', 'Rochade' ]
-    expected_words_zh_cn = ['一', '二', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
+    expected_words_fr = ['un', 'deux', 'trois', 'oui', 'non', 'noir', 'blanc', 'facile', 'modéré', 'difficile', 'pro', 'à']
+    expected_words_de = ['eins', 'zwei', 'drei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', ' ', 'mache', 'kurze', 'lange', 'Rochade' ]
+    expected_words_zh_cn = ['一', '二', '三', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
 
     squares = []
     for letter in "abcdefgh":
@@ -106,19 +106,8 @@ def speech_recognition():
     if(lang_code == 'zh-cn'):
         expected_words = expected_words_zh_cn
 
-    if(lang_code == 'en'):
-        expected_mistakes = ['yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
-    if(lang_code == 'es'):
-        expected_mistakes = []
-    if(lang_code == 'fr'):
-        expected_mistakes = []
-    if(lang_code == 'de'):
-        expected_mistakes = []
-    if(lang_code == 'zh-cn'):
-        expected_mistakes = []
-
     try:
-        text = r.recognize_google_cloud (audio, language = lang, credentials_json = credential, preferred_phrases = expected_words+squares+expected_mistakes).lower()
+        text = r.recognize_google_cloud (audio, language = lang, credentials_json = credential, preferred_phrases = expected_words+squares).lower()
         print(text)
         words = text.split(" ")
         print(words)
@@ -192,11 +181,32 @@ def speech_recognition():
                 print('Test')
                 return json.dumps({'text':square_origin + " to " + square_dest + " "})
 
-        if (not lang_code == 'zh-cn' and len(words) >= 4 and words[0] in squares and words[2] in squares):
-            return json.dumps({'text':words[0] + " to " + words[2] + " "})
+        #if (not lang_code == 'zh-cn' and len(words) >= 4 and words[0] in squares and words[2] in squares):
+        #    return json.dumps({'text':words[0] + " to " + words[2] + " "})
+        else: 
+            square_origin = " "
+            square_dest = " "
+
+            ind = 0
+            while (ind<len(text)-1):
+                letter = text[ind]
+                digit = text[ind+1]
+
+                if ((letter + digit) in squares):
+                    if (square_origin == " "):
+                        square_origin = letter + digit
+                    else: 
+                        square_dest = letter + digit
+                        break
+                ind = ind + 1
+
+            if (not square_origin == " " and not square_dest == " "):
+                print('Test')
+                return json.dumps({'text':square_origin + " to " + square_dest + " "})
+
 
         word_index = 0
-        for word in (expected_words+expected_mistakes):
+        for word in (expected_words):
              if (word in text):
                  print ("Google Cloud Speech Recognition thinks you said: " + word)
                  return json.dumps({'text':expected_words_en[word_index]})
@@ -265,7 +275,6 @@ def pieces():
     # Controls all other functions
     # Take last image from the webcam
     image = cv2.imread(image_path)
-
     # Rotate image if necessary
     if (rotateImage == 'true'):
          (h, w) = image.shape[:2]
@@ -321,7 +330,7 @@ def pieces():
     r = json.dumps({'move':move, 'status':response, 'probability_rank':probability_rank, 'rotateImage': rotateImage})
     
     return r
- 
+
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)

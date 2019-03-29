@@ -10,6 +10,7 @@ import signal
 from mainUserMoves import main as main_user
 from mainRobotMoves import main as main_robot
 from dictionary import print_play, play_sound
+from replay import main as replay_game
 
 # Audio settings
 mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
@@ -77,7 +78,7 @@ def speech_or_keyboard(lang):
         
         control = detect_keyboard()
 
-        if (control == '1' or control == '2'):
+        if (control == '1' or control == '2' or control == '3'):
             audio.terminate()
             return control
         
@@ -140,21 +141,26 @@ def main():
     
     print_play("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!", lang)
     
-    print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you.", lang)
+    print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game.", lang)
 
     control = speech_or_keyboard(lang)
     
     if(control == 'q'):
         sys.exit()
     else:
-        if (control == '1'):
+        if (control == '3'):
+            replay_game(lang)
+            
+        elif (control == '2'):
+            main_robot(lang)
+            
+        else:
             print_play("Select or say 1 for keyboard control. Select 2 for voice control.", lang)
             control = speech_or_keyboard(lang)
             if(control == 'q'):
                 sys.exit()
             main_user(control, lang)
-        else:
-            main_robot(lang)
+        
 
 
 if __name__ == '__main__':
