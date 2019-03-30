@@ -29,7 +29,7 @@ def detect_keyboard():
     signal.signal(signal.SIGALRM, handler)
 
     # Define a timeout for your function
-    signal.alarm(5)
+    signal.alarm(3)
     try:
         try:
             control = getch.getch()

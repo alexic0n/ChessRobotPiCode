@@ -138,7 +138,7 @@ def segmentation_analysis(image):
         # 4: get peaks and bottom
         while 1:
 
-            k1 = np.math.ceil(2 * k1)
+            k1 = np.math.ceil(1.5 * k1)
 
             if k1 > sensitive:
                 return [[0, 0], [0, 0]]
@@ -182,7 +182,7 @@ def segmentation_analysis(image):
 
         while 1:
 
-            k2 = np.math.ceil(2 * k2)
+            k2 = np.math.ceil(1.5 * k2)
 
             if k2 > sensitive:
                 return [[0, 0], [0, 0]]
@@ -217,10 +217,10 @@ def segmentation_analysis(image):
                         low = sum_vertical[i]
                         bottom = i
 
-            if len(peaks_vertical) >= 9:
+            if len(peaks_vertical) >= 7:
                 break
 
-            if len(peaks_vertical) < 9 and k2 >= sensitive:
+            if len(peaks_vertical) < 7 and k2 >= sensitive:
                 return [[0, 0], [0, 0]]
 
         # 5: calculate the possible wide of the grid

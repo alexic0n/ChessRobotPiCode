@@ -8,13 +8,13 @@ sys.path.append("../")
 from dictionary import print_play, play_sound
 
 HOST = "192.168.105.110"
-GRIPPER_OPEN = 700
+GRIPPER_OPEN = 550
 GRIPPER_CLOSED = 0
 GRIPPER_DOWN = 100
 GRIPPER_UP = 0
 SLEEP_TIME_BETWEEN_REQUESTS = 0
-IDLE_POSITION = {"x": 0, "y": 0}
-DEAD_PIECE_POSITION = {"x": 100, "y": 100}
+IDLE_POSITION = {"x": 100, "y": 50}
+DEAD_PIECE_POSITION = {"x": 0, "y": 50}
 
 # the gripper's motion is limited to 0-100 but it is calibrated to be the middle of the squares,
 # rather than the very edges of the board. These numbers essentially extend the board virtually,
@@ -54,24 +54,31 @@ def waitForConfirmationInput():
 def plan(
     move, # a 4 length string move
     lang,
+    worB,
     board="********/********/********/********/********/********/********/********",
             # the FEN notation with * for the state of the board
-    enpassant="-"): # the 2 length square string which is en passant
+    enpassant="-"):  # the 2 length square string which is en passant
     
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
     # print("Board dimensions:", boardDimensions)
     # print("Board:", board)
 
-    assert len(move) == 4
+    assert len(move) == 4 or len(move) == 5
     assert len(board) == 64 + 7
     assert len(enpassant) == 2 or enpassant == "-"
 
     splitBoard = board.split("/")
     assert len(splitBoard) == 8
     for row in splitBoard: assert len(row) == 8
+    
+    splitBoard = splitBoard[::-1]
+    print(splitBoard)
 
-    moveFrom = squareToCoordinates(move[0:2])
-    moveTo   = squareToCoordinates(move[2:4])
+    moveFromChessCoord = squareToCoordinates(move[0:2], worB, False)
+    moveToChessCoord = squareToCoordinates(move[2:4], worB, False)
+
+    moveFrom = squareToCoordinates(move[0:2], worB, True)
+    moveTo   = squareToCoordinates(move[2:4], worB, True)
     moveFromCoor = getSquareMiddle(moveFrom, BOARD_DIMENSIONS)
     moveToCoor   = getSquareMiddle(moveTo, BOARD_DIMENSIONS)
 
@@ -79,16 +86,17 @@ def plan(
 
     # castling
     rookMove, kingMove = castlingRookMove(move)
-    piece = splitBoard[moveFrom["y"]][moveFrom["x"]]
+    piece = splitBoard[moveFromChessCoord["x"]][moveFromChessCoord["y"]]
+    print(piece, rookMove, kingMove)
     if (rookMove != None and (piece == "K" or piece == "k")):
         print("Castling!")
         movePiece(
-            getSquareMiddle(squareToCoordinates(rookMove[0:2]), BOARD_DIMENSIONS),
-            getSquareMiddle(squareToCoordinates(rookMove[2:4]), BOARD_DIMENSIONS)
+            getSquareMiddle(squareToCoordinates(rookMove[0:2], worB, True), BOARD_DIMENSIONS),
+            getSquareMiddle(squareToCoordinates(rookMove[2:4], worB, True), BOARD_DIMENSIONS)
         )
         movePiece(
-            getSquareMiddle(squareToCoordinates(kingMove[0:2]), BOARD_DIMENSIONS),
-            getSquareMiddle(squareToCoordinates(kingMove[2:4]), BOARD_DIMENSIONS)
+            getSquareMiddle(squareToCoordinates(kingMove[0:2], worB, True), BOARD_DIMENSIONS),
+            getSquareMiddle(squareToCoordinates(kingMove[2:4], worB, True), BOARD_DIMENSIONS)
         )
         goIdle()
         return
@@ -101,7 +109,7 @@ def plan(
         else:                     # otherwise it's on the bottom half, so y pos is 5
             pawnToTake = enpassant[0] + "5"
 
-        pawnSquare = squareToCoordinates(pawnToTake)
+        pawnSquare = squareToCoordinates(pawnToTake, worB, True)
         pawnCoor = getSquareMiddle(pawnSquare, BOARD_DIMENSIONS)
         movePiece(moveFromCoor, moveToCoor)
         killPiece(pawnCoor)
@@ -111,7 +119,7 @@ def plan(
     # NORMAL MOVES #############################################################
 
     # if the move to square is not empty, remove the piece from there first
-    if (splitBoard[moveTo["y"]][moveTo["x"]] != "*"):
+    if (splitBoard[moveToChessCoord["x"]][moveToChessCoord["y"]] != "*"):
         print("Taking piece!")
         killPiece(moveToCoor, lang)
 
@@ -121,6 +129,7 @@ def plan(
 
 # given the move for the king, return the move that the rook needs to make
 def castlingRookMove(move):
+    print(move)
     if (move == "e8g8" or move == "e8h8"): return "h8f8", "e8g8"
     if (move == "e8c8" or move == "e8a8"): return "a8d8", "e8c8"
     if (move == "e1g1" or move == "e1h1"): return "h1f1", "e1g1"
@@ -136,7 +145,7 @@ def sendRequest(endpoint, body = None, setZ = None, log = ""):
 
     print(log)
 
-    # response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
+    #response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
     print((method, "http://{}:8000{}".format(HOST, endpoint), body))
 
     print("done.")
@@ -185,9 +194,6 @@ def goIdle():
 def killPiece(moveFrom, lang):
 
     print("Moving a piece from", moveFrom, "to the dead zone")
-    text_to_speech("Piece taken! Please remove it from the gripper and press yes.", lang)
-    
-    waitForConfirmationInput()
     
     # Move to starting position at the top
     sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving to position...")
@@ -206,5 +212,8 @@ def killPiece(moveFrom, lang):
 
     # Move to destination position
     sendRequest("/position", body=DEAD_PIECE_POSITION, setZ=GRIPPER_UP, log="moving to dead zone...")
+    
+    text_to_speech("Piece taken! Please remove it from the gripper and press yes.", lang)
+    waitForConfirmationInput()
 
     # TODO: need to wait for user to take the piece, then proceed

@@ -125,7 +125,7 @@ def userTurn(board, computerSide, worB, lang, storeMovesList): #this basically j
                 fen = convertToFenWithSpaces(fen_parts[0])
                 print(fen)
                 enpassant = fen_parts[3]
-                plan(str(move), lang, fen, enpassant)
+                plan(str(move), lang, worB, fen, enpassant)
                 
                 if (len(user_move) == 5):
                     print_play("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.", lang)
@@ -380,6 +380,9 @@ def gameplayloop(board, lang):
             else:
                 fen_parts = board.fen().split(" ")
                 board.push(x)
+                if (len(str(x)) == 5):
+                    text_to_speech("Promotion! Please place the queen on {} and press yes when you are ready.".format(move[2:4]), lang)
+                    waitForConfirmationInput()
                 fen = convertToFenWithSpaces(fen_parts[0])
                 enpassant = fen_parts[3]
                 
@@ -389,7 +392,7 @@ def gameplayloop(board, lang):
                 if(not str(x)[-1].isdigit()):
                     x = str(x)[0:4]
                     
-                plan(str(x), lang, fen, enpassant)
+                plan(str(x), lang, worB, fen, enpassant)
                 
                 if(str(x) == 'e1h1' or str(x) == 'e1g1'):
                     print_play("I made kingside castling. Your turn!", lang)
@@ -458,9 +461,12 @@ def gameplayloop(board, lang):
                 if(not str(x)[-1].isdigit()):
                     x = str(x)[0:4]
                     
-                plan(str(x), lang, fen, enpassant)
+                plan(str(x), lang, worB, fen, enpassant)
                 
                 board.push(x)
+                if (len(str(x)) == 5):
+                    text_to_speech("Promotion! Please place the queen on {} and press yes when you are ready.".format(move[2:4]), lang)
+                    waitForConfirmationInput()
                 
                 # Store move 
                 storeMovesList.add(str(x))

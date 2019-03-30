@@ -74,7 +74,7 @@ def print_play(text, lang):
 
         play_sound(path + text_sound_dict.get(text) + '_' + 'en' + '.wav')
         #play_sound(path + text_sound_dict.get(text) + '_' + 'es' + '.wav')
-        #play_sound(path + text_sound_dict.get(text) + '_' + 'fr' + '.wav')
+        play_sound(path + text_sound_dict.get(text) + '_' + 'fr' + '.wav')
         play_sound(path + text_sound_dict.get(text) + '_' + 'de' + '.wav')
         play_sound(path + text_sound_dict.get(text) + '_' + 'zh-cn' + '.wav')
     
