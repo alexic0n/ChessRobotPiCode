@@ -18,17 +18,17 @@ class BoardState:
     def applyMove(self, move):
 
         # check correct piece
-        boardPiece = self.getPieceAt(move.start)
-        if (boardPiece != move.piece):
-            raise ValueError(f"Cannot apply move, piece is {boardPiece} but move is {move.toString()}")
+        # boardPiece = self.getPieceAt(move.start)
+        # if (boardPiece != move.piece):
+        #     raise ValueError("Cannot apply move, piece is %s but move is %s", boardPiece, move.toString())
 
-        if (not move.isLegal()): raise ValueError(f"Move is illegal. {move.toString()}")
+        # if (not move.isLegal()): raise ValueError("Move is illegal.", move.toString())
 
-        if (self.getPieceAt(move.to) != "*"):
-            raise ValueError(f"Must move to an empty square. {move.toString()}")
-
+        # if (self.getPieceAt(move.to) != "*"):
+        #     raise ValueError("Must move to an empty square.", move.toString())
+        piece = self.getPieceAt(move.start)
         self.setPiece("*", move.start)
-        self.setPiece(move.piece, move.to)
+        self.setPiece(piece, move.to)
     
     def verifyState(self, ambiguousBoard):
         for row in range(8):
@@ -47,10 +47,10 @@ class BoardState:
     def getPieceAt(self, pos):
         x = pos["x"]
         y = pos["y"]
-        return self.state[y][x]
+        return self.state[x][y]
 
     def setPiece(self, piece, pos):
-        row = self.state[pos["y"]]
-        x = pos["x"]
-        row = row[:x] + piece + row[(x+1):]
-        self.state[pos["y"]] = row
+        row = self.state[pos["x"]]
+        y = pos["y"]
+        row = row[:y] + piece + row[(y+1):]
+        self.state[pos["x"]] = row

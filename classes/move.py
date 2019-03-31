@@ -1,6 +1,6 @@
 class Move:
-    def __init__(self, piece, start, to):
-        self.piece = piece  # char
+    def __init__(self, start, to):
+        # self.piece = piece  # char
         self.start = start  # dict: {x, y}
         self.to = to        # dict: {x, y}
     
@@ -9,4 +9,4 @@ class Move:
         return True
 
     def toString(self):
-        return f"Move: {self.piece} from {self.start} to {self.to}"
+        return "Move: from {} to {}".format(self.start, self.to)
