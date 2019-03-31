@@ -80,11 +80,11 @@ def speech_recognition():
 
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
-    expected_words_en = ['one', 'two', 'three','yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling', 'yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
-    expected_words_es = ['uno', 'dos', 'tres', 'sí', 'no', 'negro', 'blanco', 'fácil', 'moderado', 'difícil', 'profesional', 'a', 'haga', 'corto', 'largo', 'enroque']
-    expected_words_fr = ['un', 'deux', 'trois', 'oui', 'non', 'noir', 'blanc', 'facile', 'modéré', 'difficile', 'pro', 'à', 'fais', 'petit', 'grand', 'roque']
-    expected_words_de = ['eins', 'zwei', 'drei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', 'nach', 'mache', 'kurze', 'lange', 'Rochade' ]
-    expected_words_zh_cn = ['一', '二', '三', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
+    expected_words_en = ['one', 'two', 'three', 'four' ,'yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling', 'yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
+    expected_words_es = ['uno', 'dos', 'tres', 'cuatro', 'sí', 'no', 'negro', 'blanco', 'fácil', 'moderado', 'difícil', 'profesional', 'a', 'haga', 'corto', 'largo', 'enroque']
+    expected_words_fr = ['un', 'deux', 'trois', 'quatre', 'oui', 'non', 'noir', 'blanc', 'facile', 'modéré', 'difficile', 'pro', 'à', 'fais', 'petit', 'grand', 'roque']
+    expected_words_de = ['eins', 'zwei', 'drei', 'vier', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', 'nach', 'mache', 'kurze', 'lange', 'Rochade' ]
+    expected_words_zh_cn = ['一', '二', '三', '四', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
 
     squares = []
     for letter in "abcdefgh":

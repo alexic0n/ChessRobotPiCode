@@ -114,7 +114,7 @@ def plan(
         pawnSquare = squareToCoordinates(pawnToTake, worB, True)
         pawnCoor = getSquareMiddle(pawnSquare, BOARD_DIMENSIONS)
         movePiece(moveFromCoor, moveToCoor)
-        killPiece(pawnCoor)
+        killPiece(pawnCoor, lang)
         if (not replay):
             goIdle()
         return

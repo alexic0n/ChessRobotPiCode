@@ -62,7 +62,7 @@ def speech_or_keyboard(question, lang):
         
         if (dev_index == -1):
             control = detect_keyboard(time)
-            if (control == '1' or control == '3'):
+            if (control == '1' or control == '3' or control == '4'):
                 return control
             elif (control == '2'):
                 print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
@@ -75,7 +75,7 @@ def speech_or_keyboard(question, lang):
 
                 control = getch.getch()
                 
-                if (not control == '1' and not control == '3'):
+                if (not control == '1' and not control == '3' and not control == '4'):
                     print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
                     sys.exit()
                 else:
@@ -97,7 +97,7 @@ def speech_or_keyboard(question, lang):
         
         control = detect_keyboard(time)
 
-        if (control == '1' or control == '2' or control == '3'):
+        if (control == '1' or control == '2' or control == '3' or control == '4'):
             audio.terminate()
             return control
         
@@ -125,7 +125,7 @@ def speech_or_keyboard(question, lang):
         if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
             print_play(text, lang)
             sys.exit()
-        if (text == "Sorry, can you please repeat that?" or not(text[0]=='o' or text[0]=='t')):
+        if (text == "Sorry, can you please repeat that?" or not(text[0]=='o' or text[0]=='t' or text[0]=='f')):
             if (count == 3):
                 print_play("Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.", lang)
                 
@@ -139,8 +139,12 @@ def speech_or_keyboard(question, lang):
         else:
             if (text[0] == 'o'):
                 control = '1'
-            else:
+            elif (text == 'two'):
                 control = '2'
+            elif (text == 'three'):
+                control = '3'
+            else:
+                control = '4'
             audio.terminate()
             return control
         
@@ -163,15 +167,17 @@ def main():
     print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game. Select or say 4 if you want to replay the legendary game Kasparov versus Deep Blue.", lang)
 
     control = speech_or_keyboard(1, lang)
+    print(control)
     
     if(control == 'q'):
         sys.exit()
     else:
         if (control == '4'):
             #Replay Kasparov
+            replay_game(lang, True)    
             
         elif (control == '3'):
-            replay_game(lang)
+            replay_game(lang, False)
             
         elif (control == '2'):
             main_robot(lang)
