@@ -1,3 +1,4 @@
+
 from pydub import AudioSegment
 from flask import Flask, request, abort, Markup, send_file
 import markdown
@@ -79,10 +80,10 @@ def speech_recognition():
 
     with sr.AudioFile("audio.wav") as source:
         audio = r.record(source)
-    expected_words_en = ['one', 'two', 'three','yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling', 'yeah', 'yep', 'nope', 'wide', 'heart', 'heard$
-    expected_words_es = []
-    expected_words_fr = ['un', 'deux', 'trois', 'oui', 'non', 'noir', 'blanc', 'facile', 'modéré', 'difficile', 'pro', 'à']
-    expected_words_de = ['eins', 'zwei', 'drei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', ' ', 'mache', 'kurze', 'lange', 'Rochade' ]
+    expected_words_en = ['one', 'two', 'three','yes', 'no', 'black', 'white', 'easy', 'moderate', 'hard', 'pro', 'to', 'make', 'kingside', 'queenside', 'castling', 'yeah', 'yep', 'nope', 'wide', 'heart', 'heard']
+    expected_words_es = ['uno', 'dos', 'tres', 'sí', 'no', 'negro', 'blanco', 'fácil', 'moderado', 'difícil', 'profesional', 'a', 'haga', 'corto', 'largo', 'enroque']
+    expected_words_fr = ['un', 'deux', 'trois', 'oui', 'non', 'noir', 'blanc', 'facile', 'modéré', 'difficile', 'pro', 'à', 'fais', 'petit', 'grand', 'roque']
+    expected_words_de = ['eins', 'zwei', 'drei', 'ja', 'nein', 'schwarz', 'weiss', 'einfachen', 'mittleren', 'harten', 'Pro-Modus', 'nach', 'mache', 'kurze', 'lange', 'Rochade' ]
     expected_words_zh_cn = ['一', '二', '三', '是', '否', '黑', '白', '简单', '中等', '困难', '专家', '移动到', '进行', '王翼易位', '后翼易位', '后1亿位', '王1亿位' ]
 
     squares = []
@@ -118,16 +119,16 @@ def speech_recognition():
                 if('kingside' in words):
                     return json.dumps({'text':'make kingside castling '})
         if(lang_code == 'es'):
-            if('castling' in words):
-                if ('queenside' in words):
+            if('enroque' in words):
+                if ('largo' in words):
                     return json.dumps({'text':'make queenside castling '})
-                if('kingside' in words):
+                if('corto' in words):
                     return json.dumps({'text':'make kingside castling '})
         if(lang_code == 'fr'):
-            if('castling' in words):
-                if ('queenside' in words):
+            if('roque' in words):
+                if ('grand' in words):
                     return json.dumps({'text':'make queenside castling '})
-                if('kingside' in words):
+                if('petit' in words):
                     return json.dumps({'text':'make kingside castling '})
         if(lang_code == 'de'):
             if('rochade' in words):
@@ -164,7 +165,7 @@ def speech_recognition():
                     digit = '5'
                 if(digit == '六'):
                     digit = '6'
-                if(digit == '七'):
+               if(digit == '七'):
                     digit = '7'
                 if(digit == '八' or digit == '吧'):
                     digit = '8'
@@ -275,6 +276,7 @@ def pieces():
     # Controls all other functions
     # Take last image from the webcam
     image = cv2.imread(image_path)
+
     # Rotate image if necessary
     if (rotateImage == 'true'):
          (h, w) = image.shape[:2]
@@ -330,7 +332,7 @@ def pieces():
     r = json.dumps({'move':move, 'status':response, 'probability_rank':probability_rank, 'rotateImage': rotateImage})
     
     return r
-
+ 
 if __name__ == '__main__':
     #bjoern.run(app, '0.0.0.0', 8000)
     app.run(host='0.0.0.0', port=8000)

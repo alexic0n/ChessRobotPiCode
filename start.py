@@ -24,12 +24,12 @@ wav_output_filename = 'audio.wav' # name of .wav file
 def handler(signum, frame):
     raise Exception("end of time")
     
-def detect_keyboard():
+def detect_keyboard(time):
     # Register the signal function handler
     signal.signal(signal.SIGALRM, handler)
 
     # Define a timeout for your function
-    signal.alarm(3)
+    signal.alarm(time)
     try:
         try:
             control = getch.getch()
@@ -44,11 +44,13 @@ def detect_keyboard():
     
     return control
 
-def speech_or_keyboard(lang):
+def speech_or_keyboard(question, lang):
     text = "Sorry, can you please repeat that?"
     count = 0
     
     while (text == "Sorry, can you please repeat that?"):
+        time = 3
+        
         #Initalize microphone
         audio = pyaudio.PyAudio()
         
@@ -57,11 +59,28 @@ def speech_or_keyboard(lang):
             name = audio.get_device_info_by_index(ii).get('name')
             if (name == mic_name):
                 dev_index = ii 
-            
-        if (dev_index == -1):
-            print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
-            sys.exit()
         
+        if (dev_index == -1):
+            control = detect_keyboard(time)
+            if (control == '1' or control == '3'):
+                return control
+            elif (control == '2'):
+                print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
+                sys.exit()
+            else:
+                if (question == 1):
+                    print_play("Unable to detect microphone. Please unplug and plug it again or continue by selecting option 1 or 3.", lang)
+                else:
+                    print_play("Continue by selecting option 1.", lang)
+
+                control = getch.getch()
+                
+                if (not control == '1' and not control == '3'):
+                    print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
+                    sys.exit()
+                else:
+                    return control
+                
         # create pyaudio stream
         stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
                             input_device_index = dev_index,input = True, \
@@ -76,7 +95,7 @@ def speech_or_keyboard(lang):
         
         print("finished recording")
         
-        control = detect_keyboard()
+        control = detect_keyboard(time)
 
         if (control == '1' or control == '2' or control == '3'):
             audio.terminate()
@@ -141,14 +160,17 @@ def main():
     
     print_play("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!", lang)
     
-    print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game.", lang)
+    print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game. Select or say 4 if you want to replay the legendary game Kasparov versus Deep Blue.", lang)
 
-    control = speech_or_keyboard(lang)
+    control = speech_or_keyboard(1, lang)
     
     if(control == 'q'):
         sys.exit()
     else:
-        if (control == '3'):
+        if (control == '4'):
+            #Replay Kasparov
+            
+        elif (control == '3'):
             replay_game(lang)
             
         elif (control == '2'):
@@ -156,7 +178,7 @@ def main():
             
         else:
             print_play("Select or say 1 for keyboard control. Select 2 for voice control.", lang)
-            control = speech_or_keyboard(lang)
+            control = speech_or_keyboard(2, lang)
             if(control == 'q'):
                 sys.exit()
             main_user(control, lang)

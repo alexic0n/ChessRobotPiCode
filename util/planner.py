@@ -8,7 +8,7 @@ sys.path.append("../")
 from dictionary import print_play, play_sound
 
 HOST = "192.168.105.110"
-GRIPPER_OPEN = 550
+GRIPPER_OPEN = 650
 GRIPPER_CLOSED = 0
 GRIPPER_DOWN = 100
 GRIPPER_UP = 0
@@ -57,7 +57,8 @@ def plan(
     worB,
     board="********/********/********/********/********/********/********/********",
             # the FEN notation with * for the state of the board
-    enpassant="-"):  # the 2 length square string which is en passant
+    enpassant="-",
+    replay=False):  # the 2 length square string which is en passant
     
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
     # print("Board dimensions:", boardDimensions)
@@ -98,7 +99,8 @@ def plan(
             getSquareMiddle(squareToCoordinates(kingMove[0:2], worB, True), BOARD_DIMENSIONS),
             getSquareMiddle(squareToCoordinates(kingMove[2:4], worB, True), BOARD_DIMENSIONS)
         )
-        goIdle()
+        if (not replay):
+            goIdle()
         return
 
     # en passant
@@ -113,7 +115,8 @@ def plan(
         pawnCoor = getSquareMiddle(pawnSquare, BOARD_DIMENSIONS)
         movePiece(moveFromCoor, moveToCoor)
         killPiece(pawnCoor)
-        goIdle()
+        if (not replay):
+            goIdle()
         return
 
     # NORMAL MOVES #############################################################
@@ -125,7 +128,8 @@ def plan(
 
     # move the piece normally
     movePiece(moveFromCoor, moveToCoor)
-    goIdle()
+    if (not replay):
+        goIdle()
 
 # given the move for the king, return the move that the rook needs to make
 def castlingRookMove(move):
@@ -145,7 +149,7 @@ def sendRequest(endpoint, body = None, setZ = None, log = ""):
 
     print(log)
 
-    #response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
+    response = requests.request(method, "http://{}:8000{}".format(HOST, endpoint), json=body)
     print((method, "http://{}:8000{}".format(HOST, endpoint), body))
 
     print("done.")
@@ -213,7 +217,17 @@ def killPiece(moveFrom, lang):
     # Move to destination position
     sendRequest("/position", body=DEAD_PIECE_POSITION, setZ=GRIPPER_UP, log="moving to dead zone...")
     
-    text_to_speech("Piece taken! Please remove it from the gripper and press yes.", lang)
+    if (lang == 'en'):    
+        text_to_speech("Piece taken! Please remove it from the gripper and press yes.", lang)
+    if (lang == 'es'):
+        text_to_speech("Pieza tomada Por favor, sáquelo de la pinza y presione sí.", lang)
+    if (lang == 'fr'):    
+        text_to_speech("Pièce prise! Veuillez le retirer de la pince et appuyer sur Oui.", lang)
+    if (lang == 'de'):
+        text_to_speech("Figur geschlagen! Bitte nehmen Sie die Figur aus dem Greifer und drücken Sie Ja.", lang)
+    if (lang == 'zh-cn'):    
+        text_to_speech("吃子！请将棋子从夹子上取下并按确认键。", lang)
+
     waitForConfirmationInput()
 
     # TODO: need to wait for user to take the piece, then proceed
