@@ -37,7 +37,7 @@ def print_play(text, lang):
         "Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.":'unable_to_understand',
         "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead.":'server_down',
         "Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!":'welcome',
-        "Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game.":'user_robot_control',
+        "Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game. Select or say 4 if you want to replay the legendary game Kasparov versus Deep Blue.":'user_robot_control',
         "Select or say 1 for keyboard control. Select 2 for voice control.":'user_options',
         "Checkmate: Game Over!":'game_over',
         "You are in check...save your king!":'check',
@@ -65,7 +65,10 @@ def print_play(text, lang):
         "You haven't played any games yet.":'no_games',
         "You played with white.":'prev_white',
         "You played with black.":'prev_black',
-        "Piece taken! Please remove it from the gripper and press yes.":'take_piece'
+        "Unable to detect microphone. Please unplug and plug it again or continue by selecting option 1 or 3.":'no_mic_q1',
+        "Continue by selecting option 1.":'no_mic_q2',
+        "Please start the calibration process. Refer to the instruction manual for help.":'calibration_start',
+        "Calibration completed successfully.":'calibration_end'
     }
     path = 'sounds/'
     
@@ -73,145 +76,19 @@ def print_play(text, lang):
         print("Press the button with the British flag for English. Drücken Sie die Schaltfläche mit der deutschen Flagge für Deutsch. 按下中文按钮")
 
         play_sound(path + text_sound_dict.get(text) + '_' + 'en' + '.wav')
-        #play_sound(path + text_sound_dict.get(text) + '_' + 'es' + '.wav')
+        play_sound(path + text_sound_dict.get(text) + '_' + 'es' + '.wav')
         play_sound(path + text_sound_dict.get(text) + '_' + 'fr' + '.wav')
         play_sound(path + text_sound_dict.get(text) + '_' + 'de' + '.wav')
         play_sound(path + text_sound_dict.get(text) + '_' + 'zh-cn' + '.wav')
     
-    if (text == "Sorry, can you please repeat that?"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
+    else:
+        for t in text_sound_dict.keys():
+            if (t == text):
+                print(text)
+                play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
     
-    if (text == "Unable to detect microphone. Please unplug and plug it again."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
+
+        
+        
     
-    if (text == "Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if(text == "Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Select or say 1 for keyboard control. Select 2 for voice control."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "Checkmate: Game Over!"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "You are in check...save your king!"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "Make your move on the board. Confirm by pressing 1."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "You can only make queen promotion. Please place the queen on the desired square and press yes when you are done."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if (text == "You have made queenside castling. Is this correct? y or n"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-    
-    if(text == "You have made kingside castling. Is this correct? y or n"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Are you sure that you made a legal move? y or n"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Please make a new move. Press 1 to confirm."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Your move is invalid. Please make a new move and confirm it by pressing 1."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Please confirm the board is clear before proceeding by pressing 1."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "1.Select mode of play (e for easy, m for moderate, h for hard, p for pro):"):
-        print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "2.Select mode of play (e for easy, m for moderate, h for hard, p for pro):"):
-        print("Select mode of play (e for easy, m for moderate, h for hard, p for pro):")
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "1.White or black? w or b: "):
-        print("White or black? w or b: ")
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "2.White or black? w or b: "):
-        print("White or black? w or b: ")
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "You have selected white."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "You have selected black."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "Congratulations! You won the game."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "I made kingside castling. Your turn!"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav') 
-        
-    if (text == "I made queenside castling. Your turn!"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-             
-    if (text == "Please choose your next move and press 1 when you are ready to announce it."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-             
-    if (text == "You want to make kingside castling. Is this correct?"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-             
-    if (text == "You want to make queenside castling. Is this correct?"):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-             
-    if (text == "Please press 1 again when you are ready to announce your move."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "You haven't played any games yet."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "You played with white."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "You played with black."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
-    if (text == "Piece taken! Please remove it from the gripper and press yes."):
-        print(text)
-        play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
-        
         
