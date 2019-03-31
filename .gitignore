@@ -2,6 +2,7 @@
 .vscode
 *.h5
 old
+venv
 machinelearning/images/*.jpg
 machinelearning/images/Cropped/*.jpg
 machinelearning/Board State/previousFEN.txt

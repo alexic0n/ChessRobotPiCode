@@ -45,12 +45,12 @@ class BoardState:
         print(self.state)
 
     def getPieceAt(self, pos):
-        x = pos["x"]
+        x = 7 - pos["x"]
         y = pos["y"]
         return self.state[x][y]
 
     def setPiece(self, piece, pos):
-        row = self.state[pos["x"]]
+        row = self.state[7 - pos["x"]]
         y = pos["y"]
         row = row[:y] + piece + row[(y+1):]
-        self.state[pos["x"]] = row
+        self.state[7 - pos["x"]] = row

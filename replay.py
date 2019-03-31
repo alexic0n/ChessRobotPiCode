@@ -31,16 +31,25 @@ def main(lang):
         moveDictFrom = squareToCoordinates(move[0:2], "w")
         moveDictTo   = squareToCoordinates(move[2:4], "w")
         moveObj = Move(moveDictFrom, moveDictTo)       
-        boardState.applyMove(moveObj)
         fen = "/".join(boardState.state)
         print(move, fen)
         print(len(move))
-        plan(move, lang, worB, board=fen)
-        
+        plan(move, lang, worB, board=fen, replay=True)
+        boardState.applyMove(moveObj)
+            
         if(len(move) == 5):
-            text_to_speech("Promotion! Please place the queen on {} and press yes when you are ready.".format(move[2:4]), lang)
+            if (lang == 'en'):    
+                text_to_speech("Promotion! Please place the queen on {} and press yes".format(move[2:4]), lang)
+            if (lang == 'es'):
+                text_to_speech("¡Promoción! Por favor, coloque la reina en {} y presione Sí".format(move[2:4]), lang)
+            if (lang == 'fr'):    
+                text_to_speech("Promotion! Veuillez placer la reine sur {} et appuyer sur Oui".format(move[2:4]), lang)
+            if (lang == 'de'):
+                text_to_speech("Bauernumwandlung! Bitte setzen Sie die Dame auf {} und drücken Sie Ja.".format(move[2:4]), lang)
+            if (lang == 'zh-cn'):    
+                text_to_speech("升变！请将皇后放置到{}并按确认键。".format(move[2:4]), lang)
+            
             waitForConfirmationInput()
-            pass
                 
 if __name__ == '__main__':
     main("en")
