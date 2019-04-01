@@ -68,7 +68,11 @@ def print_play(text, lang):
         "Unable to detect microphone. Please unplug and plug it again or continue by selecting option 1 or 3.":'no_mic_q1',
         "Continue by selecting option 1.":'no_mic_q2',
         "Please start the calibration process. Refer to the instruction manual for help.":'calibration_start',
-        "Calibration completed successfully.":'calibration_end'
+        "Calibration completed successfully.":'calibration_end',
+        "Please set up the board, placing the black pieces on your side. Confirm by pressing yes.":'set_up_black',
+        "Please set up the board, placing the white pieces on your side. Confirm by pressing yes.":'set_up_white',
+        "Kasparov played with black.":'kasparov',
+        "EV3 is not connected.":'no_ev3'
     }
     path = 'sounds/'
     

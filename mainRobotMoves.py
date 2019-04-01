@@ -275,7 +275,11 @@ def gameplayloop(board, lang):
     
     print_play("Please start the calibration process. Refer to the instruction manual for help.", lang)
     print('started request')
-    requests.post("http://192.168.105.110:8000/init", "POST")
+    try:
+        requests.post("http://192.168.105.110:8000/init", "POST")
+    except requests.exceptions.ConnectionError:
+        print_play("EV3 is not connected.", lang)
+        sys.exit()
     print('finished request')
     print_play("Calibration completed successfully.", lang)
 
@@ -343,9 +347,13 @@ def gameplayloop(board, lang):
         worB == 'w'
     if (worB == 'w'):
         print_play("You have selected white.", lang)
+        print_play("Please set up the board, placing the white pieces on your side. Confirm by pressing yes.", lang)
+        waitForConfirmationInput()
         
     else:
         print_play("You have selected black.", lang)
+        print_play("Please set up the board, placing the black pieces on your side. Confirm by pressing yes.", lang)
+        waitForConfirmationInput()
         
     storeMovesList.add('user:' + worB)
 
