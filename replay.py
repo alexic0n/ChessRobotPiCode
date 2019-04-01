@@ -1,4 +1,5 @@
 import sys
+import requests
 from util.planner import *
 from util.util import *
 from dictionary import print_play, play_sound
@@ -6,26 +7,49 @@ from mainUserMoves import text_to_speech, waitForConfirmationInput
 from classes.boardState import *
 from classes.move import *
 
-def main(lang):
+def main(lang, kasparov=False):
     moves = []
     boardState = BoardState()
     
-    # open file and read the content in a list
-    with open('games/last.txt', 'r') as filehandle:
-        moves = [current_place.rstrip() for current_place in filehandle.readlines()]
+    if (kasparov):
+        # open file and read the content in a list
+        with open('games/deep_blue_vs_kasparov.txt', 'r') as filehandle:
+            moves = [current_place.rstrip() for current_place in filehandle.readlines()]
+    else:
+        # open file and read the content in a list
+        with open('games/last.txt', 'r') as filehandle:
+            moves = [current_place.rstrip() for current_place in filehandle.readlines()]
     
     if (len(moves) == 0):
         print_play("You haven't played any games yet.", lang)
         sys.exit()
     
     worB = " "
+    
+    print_play("Please start the calibration process. Refer to the instruction manual for help.", lang)
+    print('started request')
+    try:
+        requests.post("http://192.168.105.110:8000/init", "POST")
+    except requests.exceptions.ConnectionError:
+        print_play("EV3 is not connected.", lang)
+        sys.exit()
+    print('finished request')
+    print_play("Calibration completed successfully.", lang)
+    
     assert("user" in moves[0])
     if (moves[0][5] == 'b'):
         worB = 'b'
-        print_play("You played with black.", lang)
+        if (kasparov):
+            print_play("Kasparov played with black.", lang)  
+        else:    
+            print_play("You played with black.", lang)        
+        print_play("Please set up the board, placing the black pieces on your side. Confirm by pressing yes.", lang)
+        waitForConfirmationInput()
     else:
         worB = 'w'
         print_play("You played with white.", lang)
+        print_play("Please set up the board, placing the white pieces on your side. Confirm by pressing yes.", lang)
+        waitForConfirmationInput()
     print(worB)
     for move in moves[1:]:
         moveDictFrom = squareToCoordinates(move[0:2], "w")
