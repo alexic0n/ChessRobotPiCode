@@ -25,7 +25,7 @@ from dictionary import print_play, play_sound
 img_path = "images/image.jpg"
 
 # Audio settings
-mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
+mic_name = 'USB Device 0x46d:0x8b2: Audio'
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 44100# 44.1kHz sampling rate
@@ -205,6 +205,7 @@ def userTurn(board, computerSide, topleft, bottomright, WorB, vc, firstImage, ro
                 text_to_speech(data['status'] + "。对吗？", lang)
                 print(data['status'] + ". Is this correct? y or n")
                 
+            print('hong kong',control)
             if (control == '2'):
                 is_correct = audio_to_text(lang)[0].lower()
             else:
@@ -353,13 +354,20 @@ def getLegalMoves(board):
 
 def waitForConfirmationInputYesNo():
     choice = getch.getch()
-    if (choice == 'q'):
-        sys.exit()
+    print('wait for confirmation')
+    print(choice)
+        
+    if (choice == '.'):
+        choice = 'n'
+    else:
+        choice = 'y'
+        
+    print(choice)
     return choice
 
 def waitForConfirmationInput():
     confirmed = getch.getch()
-    if(confirmed == '1'):
+    if(confirmed == '\n'):
         return True
     elif(confirmed =='q'):
         sys.exit()
@@ -386,10 +394,11 @@ def audio_to_text(lang):
         dev_index = -1
         for ii in range(audio.get_device_count()):
             name = audio.get_device_info_by_index(ii).get('name')
-            if (name == mic_name):
+            if (mic_name in name):
                 dev_index = ii 
             
         if (dev_index == -1):
+            print('no mic')
             print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
             sys.exit()
         
@@ -467,6 +476,15 @@ def gameplayloop(board, control, lang):
     else:
         mode = getch.getch()
         
+    if (mode == '1'):
+        mode = 'e'
+    if (mode == '2'):
+        mode = 'm'
+    if (mode == '3'):
+        mode = 'h'
+    if (mode == '0'):
+        mode = 'p'
+        
     mode_text_dict_en = {
         "e":'easy',
         "m":'moderate',
@@ -526,8 +544,13 @@ def gameplayloop(board, control, lang):
     else:
         worB = getch.getch()
         
-    if not (worB == 'w' or worB == 'b'):
-        worB == 'w'
+    print(worB)
+        
+    if (worB == '*'):
+        worB = 'b'
+    else:
+        worB = 'w'
+    
     if (worB == 'w'):
         print_play("You have selected white.", lang)
         print_play("Please set up the board, placing the white pieces on your side. Confirm by pressing yes.", lang)
@@ -561,7 +584,7 @@ def gameplayloop(board, control, lang):
         "p":7
     }
 
-    depth = mode_dict.get(mode, 'easy')
+    depth = mode_dict.get(mode, 1)
 
     computerSide = ChessMatch(float(depth)) #set up our AI interface, initialised with a time it may process the board for
 
@@ -629,7 +652,7 @@ def gameplayloop(board, control, lang):
                     waitForConfirmationInput()
                     
                 fen = convertToFenWithSpaces(fen_parts[0])
-                enpassant = fen_parts[3]
+                enpassant = fen_parts[3] 
                 
                 # Store moves
                 storeMovesList.add(str(x))

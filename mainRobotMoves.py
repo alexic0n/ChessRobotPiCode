@@ -19,7 +19,7 @@ import json
 from dictionary import print_play, play_sound
 
 # Audio settings
-mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
+mic_name = 'USB Device 0x46d:0x8b2: Audio'
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 44100# 44.1kHz sampling rate
@@ -169,13 +169,16 @@ def getLegalMoves(board):
 
 def waitForConfirmationInputYesNo():
     choice = getch.getch()
-    if (choice == 'q'):
-        sys.exit()
+    
+    if (choice == '.'):
+        choice = 'n'
+    else:
+        choice = 'y'
     return choice
 
 def waitForConfirmationInput():
     confirmed = getch.getch()
-    if(confirmed == '1'):
+    if(confirmed == '\n'):
         return True
     elif(confirmed =='q'):
         sys.exit()
@@ -192,7 +195,7 @@ def audio_to_text(recogniseMove, worB, lang):
         dev_index = -1
         for ii in range(audio.get_device_count()):
             name = audio.get_device_info_by_index(ii).get('name')
-            if (name == mic_name):
+            if (mic_name in name):
                 dev_index = ii 
             
         if (dev_index == -1):

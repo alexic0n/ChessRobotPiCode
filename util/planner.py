@@ -8,7 +8,7 @@ sys.path.append("../")
 from dictionary import print_play, play_sound
 
 HOST = "ev3"
-GRIPPER_OPEN = 650
+GRIPPER_OPEN = 100
 GRIPPER_CLOSED = 0
 GRIPPER_DOWN = 100
 GRIPPER_UP = 0
@@ -44,7 +44,7 @@ def text_to_speech(text, lang):
     
 def waitForConfirmationInput():
     confirmed = getch.getch()
-    if(confirmed == '1'):
+    if(confirmed == '\n'):
         return True
     elif(confirmed =='q'):
         sys.exit()

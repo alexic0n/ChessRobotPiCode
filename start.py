@@ -13,7 +13,7 @@ from dictionary import print_play, play_sound
 from replay import main as replay_game
 
 # Audio settings
-mic_name = 'USB Device 0x46d:0x8b2: Audio (hw:1,0)'
+mic_name = 'USB Device 0x46d:0x8b2: Audio'
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 44100# 44.1kHz sampling rate
@@ -57,11 +57,21 @@ def speech_or_keyboard(question, lang):
         dev_index = -1
         for ii in range(audio.get_device_count()):
             name = audio.get_device_info_by_index(ii).get('name')
-            if (name == mic_name):
+            if (mic_name in name):
                 dev_index = ii 
         
         if (dev_index == -1):
             control = detect_keyboard(time)
+            
+            if (control == '5'):
+                control = '2'
+            elif (control == '6'):
+                control = '3'
+            elif (control == '+'):
+                control = '4'
+            elif (control == '4'):
+                control = '1'
+            
             if (control == '1' or control == '3' or control == '4'):
                 return control
             elif (control == '2'):
@@ -74,6 +84,15 @@ def speech_or_keyboard(question, lang):
                     print_play("Continue by selecting option 1.", lang)
 
                 control = getch.getch()
+                
+                if (control == '5'):
+                    control = '2'
+                elif (control == '6'):
+                    control = '3'
+                elif (control == '+'):
+                    control = '4'
+                elif (control == '4'):
+                    control = '1'
                 
                 if (not control == '1' and not control == '3' and not control == '4'):
                     print_play("Unable to detect microphone. Please unplug and plug it again.", lang)
@@ -96,6 +115,16 @@ def speech_or_keyboard(question, lang):
         print("finished recording")
         
         control = detect_keyboard(time)
+        print(control)
+        
+        if (control == '5'):
+            control = '2'
+        elif (control == '6'):
+            control = '3'
+        elif (control == '+'):
+            control = '4'
+        elif (control == '4'):
+            control = '1'
 
         if (control == '1' or control == '2' or control == '3' or control == '4'):
             audio.terminate()
@@ -130,6 +159,16 @@ def speech_or_keyboard(question, lang):
                 print_play("Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.", lang)
                 
                 control = getch.getch()
+                
+                if (control == '5'):
+                    control = '2'
+                elif (control == '6'):
+                    control = '3'
+                elif (control == '+'):
+                    control = '4'
+                elif (control == '4'):
+                    control = '1'
+                
                 audio.terminate()
                 return control
                     
@@ -143,7 +182,7 @@ def speech_or_keyboard(question, lang):
                 control = '2'
             elif (text == 'three'):
                 control = '3'
-            else:
+            elif (text == 'four'):
                 control = '4'
             audio.terminate()
             return control
@@ -151,6 +190,17 @@ def speech_or_keyboard(question, lang):
 def main():
     print_play("Select language.", '')
     lang_num = getch.getch()
+    
+    if (lang_num == '7'):
+        lang_num = '2'
+    elif (lang_num == '8'):
+        lang_num = '3'
+    elif (lang_num == '9'):
+        lang_num = '4'
+    elif (lang_num == '-'):
+        lang_num = '5'
+    else:
+        lang_num = '1'
     
     lang_dict = {
         "1":'en',
