@@ -1,41 +1,12 @@
-from pyglet.window import key
 import threading
 import subprocess
 import keyboardleds
+from time import sleep
 
-window = pyglet.window.Window()
 on = False
 game = None
 numlock = keyboardleds.LedKit(
     '/dev/input/by-id/usb-04d9_1203-event-kbd').num_lock
-
-
-@window.event
-def on_key_press(symbol, modifiers):
-    if symbol == key.NUMLOCK:
-        if on and game:
-            print("Killing game")
-            game.kill()
-            on = False
-        else:
-            startGame()
-
-
-@window.event
-def on_draw():
-  window.clear()
-
-
-def startGame():
-    if (not on) and (game == None):
-        print("Starting game")
-        game = popenAndCall(gameStopped, 'python3 ./start.py')
-        on = True
-    if (not on) and game:
-        # something's gone wrong
-        raise Exception("Game still exists, cannot turn on.")
-    if on:
-        return
 
 
 def gameStopped():
@@ -71,4 +42,25 @@ if __name__ == "__main__":
     print("CheckMate Bootstrapper starting.")
     numlock.reset()
     while True:
-        pass
+        state = numlock.get()
+        if state == True:
+            # num lock on
+            if not on:
+                # requested game start
+                print("Starting game")
+                if game != None:
+                    # something's gone wrong
+                    raise Exception("Game still exists, cannot turn on.")
+                game = popenAndCall(gameStopped, 'python3 ./start.py')
+                on = True
+
+        else:
+            # num lock off
+            if on:
+                # requested game terminate
+                print("Killing game")
+                game.kill()
+                on = False
+                game = None
+    sleep(0.5)  
+
