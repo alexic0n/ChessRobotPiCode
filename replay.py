@@ -29,7 +29,7 @@ def main(lang, kasparov=False):
     print_play("Please start the calibration process. Refer to the instruction manual for help.", lang)
     print('started request')
     try:
-        requests.post("http://192.168.105.110:8000/init", "POST")
+        requests.post("http://ev3:8000/init", "POST")
     except requests.exceptions.ConnectionError:
         print_play("EV3 is not connected.", lang)
         sys.exit()

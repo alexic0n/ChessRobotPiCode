@@ -7,7 +7,7 @@ import getch
 sys.path.append("../")
 from dictionary import print_play, play_sound
 
-HOST = "192.168.105.110"
+HOST = "ev3"
 GRIPPER_OPEN = 650
 GRIPPER_CLOSED = 0
 GRIPPER_DOWN = 100
