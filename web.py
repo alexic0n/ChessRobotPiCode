@@ -113,10 +113,10 @@ def speech_recognition():
         words = text.split(" ")
         print(words)
         if(lang_code == 'en'):
-            if('castling' in words):
-                if ('queenside' in words):
+            if('cast' in text):
+                if ('queen' in text):
                     return json.dumps({'text':'make queenside castling '})
-                if('kingside' in words):
+                if('king' in text):
                     return json.dumps({'text':'make kingside castling '})
         if(lang_code == 'es'):
             if('enroque' in words):

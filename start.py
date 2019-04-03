@@ -7,9 +7,10 @@ import pyaudio
 import wave
 import requests
 import signal
+import pygame
 from mainUserMoves import main as main_user
 from mainRobotMoves import main as main_robot
-from dictionary import print_play, play_sound
+from dictionary import print_play, play_sound, play_sound_pyaudio
 from replay import main as replay_game
 
 # Audio settings
@@ -33,6 +34,7 @@ def detect_keyboard(time):
     try:
         try:
             control = getch.getch()
+            pygame.mixer.music.stop()
         except OverflowError as exc:
             print(exc)
             control = ""
@@ -84,6 +86,7 @@ def speech_or_keyboard(question, lang):
                     print_play("Continue by selecting option 1.", lang)
 
                 control = getch.getch()
+                pygame.mixer.music.stop()
                 
                 if (control == '5'):
                     control = '2'
@@ -159,6 +162,7 @@ def speech_or_keyboard(question, lang):
                 print_play("Sorry I am having trouble understanding. Press q to exit or continue the game with keyboard control.", lang)
                 
                 control = getch.getch()
+                pygame.mixer.music.stop()
                 
                 if (control == '5'):
                     control = '2'
@@ -188,8 +192,10 @@ def speech_or_keyboard(question, lang):
             return control
         
 def main():
-    print_play("Select language.", '')
+    play_sound_pyaudio('sounds/startup.wav')
+    lang_num = print_play("Select language.", '')
     lang_num = getch.getch()
+    pygame.mixer.music.stop()
     
     if (lang_num == '7'):
         lang_num = '2'
@@ -212,12 +218,23 @@ def main():
     
     lang = lang_dict.get(lang_num, 'en')
     
-    print_play("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!", lang)
+    play_sound_pyaudio('sounds/welcome_en.wav')
+    #print_play("Hi there, I'm Checkmate, your personal chess playing assistant! Let's make the world of chess more exciting and fun!", lang)
     
     print_play("Select or say 1 if you want to move your own pieces. Select or say 2 if you want me to move your pieces for you. Select or say 3 if you want me to replay your last game. Select or say 4 if you want to replay the legendary game Kasparov versus Deep Blue.", lang)
 
-    control = speech_or_keyboard(1, lang)
+    control = getch.getch()
+    pygame.mixer.music.stop()
     print(control)
+    
+    if (control == '5'):
+        control = '2'
+    elif (control == '6'):
+        control = '3'
+    elif (control == '+'):
+        control = '4'
+    elif (control == '4'):
+        control = '1'
     
     if(control == 'q'):
         sys.exit()
@@ -233,7 +250,7 @@ def main():
             main_robot(lang)
             
         else:
-            print_play("Select or say 1 for keyboard control. Select 2 for voice control.", lang)
+            print_play("Select or say 1 for keyboard control. Select 2 for voice control.", lang, True)
             control = speech_or_keyboard(2, lang)
             if(control == 'q'):
                 sys.exit()

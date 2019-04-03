@@ -8,7 +8,6 @@ import chess.engine
 import getch
 import pyaudio
 import wave
-
 sys.path.append("./")
 from classes.aiInterface import *
 from util.util import *
@@ -16,7 +15,8 @@ from util.storeMoves import storeMoves
 from util.planner import *
 import requests
 import json
-from dictionary import print_play, play_sound
+from dictionary import print_play, play_sound, waitForConfirmationInputYesNo, waitForConfirmationInput, play_sound_pyaudio
+from mainUserMoves import text_to_speech
 
 # Audio settings
 mic_name = 'USB Device 0x46d:0x8b2: Audio'
@@ -26,20 +26,6 @@ samp_rate = 44100# 44.1kHz sampling rate
 chunk = 512 # 2^12 samples for buffer
 record_secs = 5 # seconds to record
 wav_output_filename = 'audio.wav' # name of .wav file
-    
-def text_to_speech(text, lang):
-    r = requests.post("http://www.checkmate.tardis.ed.ac.uk/text_to_speech", files={
-            'text': text,
-            'lang': lang
-        })
-
-    with wave.open('sounds/audio.wav','wb') as file:
-            file.setnchannels(1)
-            file.setsampwidth(2)
-            file.setframerate(26500)
-            file.writeframes(r.content)
-    
-    play_sound('sounds/audio.wav')
     
 def convertToFenWithSpaces(fen):
        boardState = fen.split(' ')[0]
@@ -53,11 +39,11 @@ def convertToFenWithSpaces(fen):
 
 def userTurn(board, computerSide, worB, lang, storeMovesList): #this basically just handles user interaction, reading the boardstate and update the internal board accordingly
     if(board.legal_moves.count() == 0):
-        print_play("Checkmate: Game Over!", lang)
+        print_play("Checkmate: Game Over!", lang, True)
         storeMovesList.save()
         return False
     if(board.is_check()):
-        print_play("You are in check...save your king!", lang)
+        print_play("You are in check...save your king!", lang, True)
     
     print_play("Please choose your next move and press 1 when you are ready to announce it.", lang)
     waitForConfirmationInput()
@@ -92,10 +78,10 @@ def userTurn(board, computerSide, worB, lang, storeMovesList): #this basically j
                     
                 text = audio_to_text(False, worB, lang)[0]
             if (move_str == 'e1g1' or move_str == 'e8g8'):
-                print_play("You want to make kingside castling. Is this correct?", lang)
+                print_play("You want to make kingside castling. Is this correct?", lang, True)
                 text = audio_to_text(False, worB, lang)[0]
             elif (move_str == 'e1c1' or move_str == 'e8c8'):
-                print_play("You want to make queenside castling. Is this correct?", lang)
+                print_play("You want to make queenside castling. Is this correct?", lang, True)
                 text = audio_to_text(False, worB, lang)[0]
             else:
                 if (lang == 'en'):
@@ -127,7 +113,8 @@ def userTurn(board, computerSide, worB, lang, storeMovesList): #this basically j
                 fen = convertToFenWithSpaces(fen_parts[0])
                 print(fen)
                 enpassant = fen_parts[3]
-                plan(str(move), lang, worB, fen, enpassant)
+                
+                plan(str(move), lang, worB, fen, enpassant, True)
                 
                 if (len(user_move) == 5):
                     print_play("You can only make queen promotion. Please place the queen on the desired square and press yes when you are done.", lang)
@@ -166,24 +153,6 @@ def getLegalMoves(board):
     for move in x:
         legalMoves.append(str(move))
     return legalMoves
-
-def waitForConfirmationInputYesNo():
-    choice = getch.getch()
-    
-    if (choice == '.'):
-        choice = 'n'
-    else:
-        choice = 'y'
-    return choice
-
-def waitForConfirmationInput():
-    confirmed = getch.getch()
-    if(confirmed == '\n'):
-        return True
-    elif(confirmed =='q'):
-        sys.exit()
-    else:
-        return waitForConfirmationInput()
     
 def audio_to_text(recogniseMove, worB, lang):
     text = "Sorry, can you please repeat that?"
@@ -200,7 +169,7 @@ def audio_to_text(recogniseMove, worB, lang):
             
         if (dev_index == -1):
             play_sound('sounds/mic_not_detected.wav')
-            print("Unable to detect microphone. Please unplug and plug it again.", lang)
+            print("Unable to detect microphone. Please unplug and plug it again.", lang, True)
             sys.exit()
         
         # create pyaudio stream
@@ -209,7 +178,7 @@ def audio_to_text(recogniseMove, worB, lang):
                             frames_per_buffer=chunk)
         
         print("recording")
-        play_sound('sounds/start.wav')
+        play_sound_pyaudio('sounds/start.wav')
         
         frames = []
         
@@ -219,7 +188,7 @@ def audio_to_text(recogniseMove, worB, lang):
             frames.append(data)
         
         print("finished recording")
-        play_sound('sounds/end.wav')
+        play_sound_pyaudio('sounds/end.wav')
         
         # stop the stream, close it, and terminate the pyaudio instantiation
         stream.stop_stream()
@@ -243,16 +212,16 @@ def audio_to_text(recogniseMove, worB, lang):
         
         text = data['text']
         if (text == "Sorry, I could not request results from Google Speech Recognition Service. Please try again later or use keyboard control instead."):
-            print_play(text, lang)
+            print_play(text, lang, True)
             sys.exit()
         if (text == "Sorry, can you please repeat that?" and recogniseMove == False):
-            print_play(text, lang)
+            print_play(text, lang, True)
             
         if (recogniseMove == True):
             words = text.split(" ")
             if not (len(words) == 4):
                 text = "Sorry, can you please repeat that?"
-                print_play(text, lang)
+                print_play(text, lang, True)
             else:
                 if (words[1] == 'queenside'):
                     if (worB == 'w'):
@@ -276,7 +245,7 @@ def gameplayloop(board, lang):
     print_play("Please confirm the board is clear before proceeding by pressing 1.", lang)
     waitForConfirmationInput()
     
-    print_play("Please start the calibration process. Refer to the instruction manual for help.", lang)
+    print_play("Please start the calibration process. Refer to the instruction manual for help.", lang, True)
     print('started request')
     try:
         requests.post("http://ev3:8000/init", "POST")
@@ -284,9 +253,9 @@ def gameplayloop(board, lang):
         print_play("EV3 is not connected.", lang)
         sys.exit()
     print('finished request')
-    print_play("Calibration completed successfully.", lang)
+    print_play("Calibration completed successfully.", lang, True)
 
-    print_play("2.Select mode of play (e for easy, m for moderate, h for hard, p for pro):", lang)
+    print_play("2.Select mode of play (e for easy, m for moderate, h for hard, p for pro):", lang, True)
 
     mode = audio_to_text(False, worB, lang)[0].lower()
     
@@ -342,19 +311,19 @@ def gameplayloop(board, lang):
         text_to_speech("您选择了{} 模式。".format(mode_text_dict_zh_cn.get(mode, '简单')), lang)
         print("You have selected {} mode.".format(mode_text_dict_en.get(mode, 'easy')))
 
-    print_play("2.White or black? w or b: ", lang)
+    print_play("2.White or black? w or b: ", lang, True)
     
     worB = audio_to_text(False, worB, lang)[0].lower()
     
     if not (worB == 'w' or worB == 'b'):
         worB == 'w'
     if (worB == 'w'):
-        print_play("You have selected white.", lang)
+        print_play("You have selected white.", lang, True)
         print_play("Please set up the board, placing the white pieces on your side. Confirm by pressing yes.", lang)
         waitForConfirmationInput()
         
     else:
-        print_play("You have selected black.", lang)
+        print_play("You have selected black.", lang, True)
         print_play("Please set up the board, placing the black pieces on your side. Confirm by pressing yes.", lang)
         waitForConfirmationInput()
         
@@ -410,7 +379,7 @@ def gameplayloop(board, lang):
             x = computerSide.aiTurn() #obtain the move the ai would make
 
             if (x == None):
-                print_play("Congratulations! You won the game.", lang)
+                print_play("Congratulations! You won the game.", lang, True)
                 storeMovesList.save()
                 break
             else:
@@ -439,14 +408,14 @@ def gameplayloop(board, lang):
                 
                 if(not str(x)[-1].isdigit()):
                     x = str(x)[0:4]
-                    
+              
                 plan(str(x), lang, worB, fen, enpassant)
                 
                 if(str(x) == 'e1h1' or str(x) == 'e1g1'):
-                    print_play("I made kingside castling. Your turn!", lang)
+                    print_play("I made kingside castling. Your turn!", lang, True)
                     
                 elif(str(x) == 'e1a1' or str(x) == 'e1c1'):
-                    print_play("I made queenside castling. Your turn!", lang)
+                    print_play("I made queenside castling. Your turn!", lang, True)
                 
                 elif(not str(x)[-1].isdigit()):                    
                     piece = str(x)[-1].lower()
@@ -468,7 +437,7 @@ def gameplayloop(board, lang):
                     
                 else:
                     if (lang == 'en'):
-                        text_to_speech("I moved from {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]), lang)
+                        text_to_speech("I moved {} to {}. Your turn!".format(str(x)[0:2], str(x)[2:4]), lang)
                         print("AI makes move: {}.".format(x),"\n")
                     if (lang == 'es'):
                         text_to_speech("He movido {} a {}. ¡Su turno!".format(str(x)[0:2], str(x)[2:4]), lang)
@@ -499,7 +468,7 @@ def gameplayloop(board, lang):
             x = computerSide.aiTurn()
 
             if (x == None):
-                print_play("Congratulations! You won the game.", lang)
+                print_play("Congratulations! You won the game.", lang, True)
                 storeMovesList.save()
                 break
             else:
@@ -533,10 +502,10 @@ def gameplayloop(board, lang):
                 storeMovesList.save()
                 
                 if(str(x) == 'e8h8' or str(x) == 'e8g8'):
-                    print_play("I made kingside castling. Your turn!", lang)
+                    print_play("I made kingside castling. Your turn!", lang, True)
                     
                 elif(str(x) == 'e8a8' or str(x) == 'e8c8'):
-                    print_play("I made queenside castling. Your turn!", lang)
+                    print_play("I made queenside castling. Your turn!", lang, True)
                 
                 elif(not str(x)[-1].isdigit()):
                     piece = str(x)[-1].lower()

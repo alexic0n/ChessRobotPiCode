@@ -57,13 +57,14 @@ def plan(
     worB,
     board="********/********/********/********/********/********/********/********",
             # the FEN notation with * for the state of the board
-    enpassant="-",
-    replay=False):  # the 2 length square string which is en passant
+    enpassant="-", # the 2 length square string which is en passant
+    replay=False):  
     
     print("Planning move: %s -> %s" % (move[0:2], move[2:4]))
     # print("Board dimensions:", boardDimensions)
     # print("Board:", board)
 
+    # assertions
     assert len(move) == 4 or len(move) == 5
     assert len(board) == 64 + 7
     assert len(enpassant) == 2 or enpassant == "-"
@@ -82,6 +83,8 @@ def plan(
     moveTo   = squareToCoordinates(move[2:4], worB, True)
     moveFromCoor = getSquareMiddle(moveFrom, BOARD_DIMENSIONS)
     moveToCoor   = getSquareMiddle(moveTo, BOARD_DIMENSIONS)
+
+    shortcut = isShortcut(moveFrom, moveTo, splitBoard)
 
     # SPECIAL MOVES ############################################################
 
@@ -127,7 +130,7 @@ def plan(
         killPiece(moveToCoor, lang)
 
     # move the piece normally
-    movePiece(moveFromCoor, moveToCoor)
+    movePiece(moveFromCoor, moveToCoor, shortcut)
     if (not replay):
         goIdle()
 
@@ -156,7 +159,19 @@ def sendRequest(endpoint, body = None, setZ = None, log = ""):
     time.sleep(SLEEP_TIME_BETWEEN_REQUESTS)
     # return response.text
 
-def movePiece(moveFrom, moveTo):
+def isShortcut(moveFrom, moveTo, splitBoard):
+    if (moveFrom["y"] == moveTo["y"]):
+        return True
+    # row = splitBoard[moveFrom["x"]]
+    # fromY = moveFrom["y"]
+    # toY = moveTo["y"]
+    # if (row[fromY:toY] + row[toY:fromY] == "*" * abs(toY - fromY)):
+    #     return True
+    if (abs(moveFrom["y"] - moveTo["y"]) == 1 and moveFrom["x"] == moveTo["x"]):
+        return True
+    return False
+
+def movePiece(moveFrom, moveTo, shortcut=False):
 
     print("Moving a piece from", moveFrom, "to", moveTo)
 
@@ -172,13 +187,17 @@ def movePiece(moveFrom, moveTo):
     # Close the gripper
     sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
 
-    # Move gripper up with the piece
-    sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving up...")
+    if (not shortcut):
+        # Move gripper up with the piece
+        sendRequest("/position", body=moveFrom, setZ=GRIPPER_UP, log="moving up...")
 
-    # Move to destination position
-    sendRequest("/position", body=moveTo, setZ=GRIPPER_UP, log="moving to destination...")
+        # Move to destination position
+        sendRequest("/position", body=moveTo, setZ=GRIPPER_UP, log="moving to destination...")
+    else:
 
-    # Move down to the board
+        sendRequest("/position", body=moveFrom, setZ=(GRIPPER_DOWN*0.9), log="moving up...")
+        sendRequest("/position", body=moveTo, setZ=(GRIPPER_DOWN*0.9), log="moving to destination...")
+
     sendRequest("/position", body=moveTo, setZ=GRIPPER_DOWN, log="moving down...")
 
     # Release the piece onto the board
@@ -188,7 +207,7 @@ def movePiece(moveFrom, moveTo):
     sendRequest("/position", body=moveTo, setZ=GRIPPER_UP, log="moving up...")
 
     # Close the gripper
-    sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
+    # sendRequest("/gripper", body={"move": GRIPPER_CLOSED}, log="closing gripper...")
 
 # Go to idle position
 def goIdle():

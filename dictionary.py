@@ -1,7 +1,41 @@
+import pygame
+import getch
+import sys
 import pyaudio
 import wave
 
-def play_sound(path):
+def waitForConfirmationInputYesNo():
+    choice = getch.getch()
+    pygame.mixer.music.stop()
+
+    if (choice == '.'):
+        choice = 'n'
+    else:
+        choice = 'y'
+        
+    return choice
+
+def waitForConfirmationInput():
+    confirmed = getch.getch()
+    pygame.mixer.music.stop()
+    if(confirmed == '\n'):
+        return True
+    elif(confirmed =='q'):
+        sys.exit()
+    else:
+        return waitForConfirmationInput()
+
+def play_sound(path, speed = 27300):
+    pygame.mixer.quit()
+    pygame.mixer.init(speed)
+    while (pygame.mixer.music.get_busy()):
+        pygame.mixer.music.stop()
+        return
+    print('load', path)
+    pygame.mixer.music.load(path)
+    pygame.mixer.music.play()
+    
+def play_sound_pyaudio(path):
     #define stream chunk   
     chunk = 1024  
     
@@ -29,7 +63,7 @@ def play_sound(path):
     #close PyAudio  
     p.terminate()
 
-def print_play(text, lang):
+def print_play(text, lang, sync = False):
     text_sound_dict = {
         "Select language.":'lang',
         "Sorry, can you please repeat that?":'repeat',
@@ -78,18 +112,15 @@ def print_play(text, lang):
     
     if (text == "Select language."):
         print("Press the button with the British flag for English. Drücken Sie die Schaltfläche mit der deutschen Flagge für Deutsch. 按下中文按钮")
-
-        play_sound(path + text_sound_dict.get(text) + '_' + 'en' + '.wav')
-        play_sound(path + text_sound_dict.get(text) + '_' + 'es' + '.wav')
-        play_sound(path + text_sound_dict.get(text) + '_' + 'fr' + '.wav')
-        play_sound(path + text_sound_dict.get(text) + '_' + 'de' + '.wav')
-        play_sound(path + text_sound_dict.get(text) + '_' + 'zh-cn' + '.wav')
-    
+        play_sound('sounds/languages.wav', 44100)    
     else:
-        for t in text_sound_dict.keys():
-            if (t == text):
-                print(text)
+        if text_sound_dict.get(text, False):
+            print(text)
+            if (sync):
+                play_sound_pyaudio(path + text_sound_dict.get(text) + '_' + lang + '.wav')
+            else:
                 play_sound(path + text_sound_dict.get(text) + '_' + lang + '.wav')
+    
     
 
         
